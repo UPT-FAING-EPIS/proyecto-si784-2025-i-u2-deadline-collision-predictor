@@ -78,6 +78,7 @@ main {
     font-weight: 500;
     border: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
 .fc-event.urgent {
@@ -93,6 +94,12 @@ main {
 .fc-event.normal {
     background-color: var(--success-color);
     border-color: var(--success-color);
+}
+
+.fc-event.completed {
+    opacity: 0.6 !important;
+    text-decoration: line-through !important;
+    background-color: rgba(16, 185, 129, 0.5) !important;
 }
 
 /* Botón flotante */
@@ -471,4 +478,27 @@ main {
 .logout-btn:hover {
     background: var(--danger-color);
     color: #fff;
+}
+
+.offcanvas {
+    max-width: 400px;
+}
+
+.event-details {
+    padding: 1rem;
+}
+
+.event-details h4 {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.event-details strong {
+    color: var(--text-light);
+    margin-right: 0.5rem;
+}
+
+.form-check-input:checked {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
 }
