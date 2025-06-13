@@ -184,8 +184,25 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Nuevo: Detectar si es una pregunta sobre eventos (ej. para mañana)
+        if (text.toLowerCase().includes('mañana') || text.toLowerCase().includes('que tengo') || text.toLowerCase().includes('eventos')) {
+            try {
+                const response = await axios.post('/api/ai/ask', { pregunta: text }, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                addMessage(response.data.respuesta);
+            } catch (error) {
+                console.error('Error al consultar eventos:', error);
+                addMessage('Lo siento, hubo un error al obtener tus eventos. Por favor, inténtalo de nuevo.');
+            }
+            return;
+        }
+
+        // Lógica existente para procesar nuevas tareas
         try {
-            const response = await axios.post('/api/ai/process', { text });
+            const response = await axios.post('/api/ai/process', { text }, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
             const taskData = response.data;
             addMessage(`Entendido. Voy a crear una ${taskData.tipo} llamada "${taskData.nombre}" para el ${new Date(taskData.deadline).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`);
 

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment');
+const pool = require('../db');
+const auth = require('../middleware/auth');
 require('moment/locale/es');
 moment.locale('es');
 
@@ -133,6 +135,14 @@ function extractTaskName(text) {
     return cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
 }
 
+function getCurrentDate() {
+    return moment().format('YYYY-MM-DD');
+}
+
+function getTomorrowDate() {
+    return moment().add(1, 'days').format('YYYY-MM-DD');
+}
+
 router.post('/process', (req, res) => {
     try {
         const { text } = req.body;
@@ -152,6 +162,99 @@ router.post('/process', (req, res) => {
         console.error('Error procesando el texto:', error);
         res.status(500).json({
             error: 'Error al procesar el texto'
+        });
+    }
+});
+
+router.get('/tomorrow-events', auth, async (req, res) => {
+    try {
+        const tomorrow = getTomorrowDate();
+        const today = getCurrentDate();
+        
+        // Consultar eventos para mañana
+        const [eventos] = await pool.query(
+            `SELECT * FROM eventos 
+             WHERE usuario_id = ? 
+             AND DATE(deadline) = ?`,
+            [req.user.id, tomorrow]
+        );
+
+        // Formatear los eventos para la respuesta
+        const eventosFormateados = eventos.map(evento => ({
+            id: evento.id,
+            nombre: evento.nombre,
+            tipo: evento.tipo,
+            deadline: moment(evento.deadline).format('YYYY-MM-DD HH:mm'),
+            creado_en: moment(evento.creado_en).format('YYYY-MM-DD HH:mm')
+        }));
+
+        res.json({
+            fecha_actual: today,
+            fecha_mañana: tomorrow,
+            eventos: eventosFormateados,
+            total_eventos: eventosFormateados.length
+        });
+    } catch (error) {
+        console.error('Error al obtener eventos de mañana:', error);
+        res.status(500).json({
+            error: 'Error al procesar la solicitud de eventos'
+        });
+    }
+});
+
+router.post('/ask', auth, async (req, res) => {
+    try {
+        const { pregunta } = req.body;
+        if (!pregunta) {
+            return res.status(400).json({ error: 'La pregunta es requerida' });
+        }
+
+        // Convertir la pregunta a minúsculas para facilitar el análisis
+        const preguntaLower = pregunta.toLowerCase();
+
+        // Detectar si la pregunta es sobre mañana
+        if (preguntaLower.includes('mañana')) {
+            const tomorrow = getTomorrowDate();
+            
+            // Consultar eventos para mañana
+            const [eventos] = await pool.query(
+                `SELECT * FROM eventos 
+                 WHERE usuario_id = ? 
+                 AND DATE(deadline) = ?`,
+                [req.user.id, tomorrow]
+            );
+
+            // Formatear los eventos
+            const eventosFormateados = eventos.map(evento => ({
+                nombre: evento.nombre,
+                tipo: evento.tipo,
+                hora: moment(evento.deadline).format('HH:mm')
+            }));
+
+            if (eventosFormateados.length === 0) {
+                return res.json({
+                    respuesta: "No tienes ningún evento programado para mañana."
+                });
+            }
+
+            // Construir respuesta natural
+            let respuesta = "Para mañana tienes los siguientes eventos:\n";
+            eventosFormateados.forEach(evento => {
+                respuesta += `- ${evento.nombre} (${evento.tipo}) a las ${evento.hora}\n`;
+            });
+
+            return res.json({ respuesta });
+        }
+
+        // Si no se detecta una pregunta sobre mañana
+        return res.json({
+            respuesta: "Lo siento, solo puedo responder preguntas sobre eventos de mañana. Por ejemplo: '¿Qué eventos tengo mañana?' o '¿Tengo examen mañana?'"
+        });
+
+    } catch (error) {
+        console.error('Error al procesar la pregunta:', error);
+        res.status(500).json({
+            error: 'Error al procesar la pregunta'
         });
     }
 });
