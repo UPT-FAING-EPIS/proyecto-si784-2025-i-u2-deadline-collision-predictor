@@ -4,15 +4,18 @@ const getDashboardStats = async (req, res) => {
     try {
         // Obtener estadísticas de tareas completadas vs pendientes
         const [completadas] = await db.query(
-            'SELECT COUNT(*) as count FROM eventos WHERE completado = TRUE'
+            'SELECT COUNT(*) as count FROM eventos WHERE completado = TRUE AND usuario_id = ?',
+            [req.user.id]
         );
         const [pendientes] = await db.query(
-            'SELECT COUNT(*) as count FROM eventos WHERE completado = FALSE'
+            'SELECT COUNT(*) as count FROM eventos WHERE completado = FALSE AND usuario_id = ?',
+            [req.user.id]
         );
 
         // Obtener distribución por tipo
         const [tipoStats] = await db.query(
-            'SELECT tipo, COUNT(*) as count FROM eventos GROUP BY tipo'
+            'SELECT tipo, COUNT(*) as count FROM eventos WHERE usuario_id = ? GROUP BY tipo',
+            [req.user.id]
         );
 
         // Obtener progreso mensual
@@ -21,10 +24,11 @@ const getDashboardStats = async (req, res) => {
                 DATE_FORMAT(deadline, '%Y-%m') as mes,
                 COUNT(*) as completadas
             FROM eventos 
-            WHERE completado = TRUE 
+            WHERE completado = TRUE AND usuario_id = ?
             GROUP BY DATE_FORMAT(deadline, '%Y-%m')
             ORDER BY mes DESC
-            LIMIT 6`
+            LIMIT 6`,
+            [req.user.id]
         );
 
         // Obtener exámenes completados y pendientes por mes
@@ -34,10 +38,11 @@ const getDashboardStats = async (req, res) => {
                 SUM(CASE WHEN completado = TRUE THEN 1 ELSE 0 END) as completados,
                 SUM(CASE WHEN completado = FALSE THEN 1 ELSE 0 END) as pendientes
             FROM eventos 
-            WHERE tipo = 'examen'
+            WHERE tipo = 'examen' AND usuario_id = ?
             GROUP BY DATE_FORMAT(deadline, '%Y-%m')
             ORDER BY mes DESC
-            LIMIT 6`
+            LIMIT 6`,
+            [req.user.id]
         );
 
         // Formatear datos para el frontend
