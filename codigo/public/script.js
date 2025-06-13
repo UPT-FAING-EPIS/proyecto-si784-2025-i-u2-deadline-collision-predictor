@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Prioridad 3: Otras intenciones de agregar (menos explícitas, que no empiezan con 'agrega', 'crea', 'añade')
-        const isOtherAddIntent = textLower.includes('necesito agregar') ||
+        const isOtherAddIntent = textLower.includes('necesito') ||
                                  textLower.includes('debo hacer') ||
                                  textLower.includes('registrar') ||
                                  (textLower.includes('tengo') && !textLower.includes('tengo eventos') && !textLower.includes('tengo colisiones'));
