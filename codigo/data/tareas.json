@@ -1,1 +1,7 @@
-[]
+[
+  {
+    "nombre": "Prueba IA",
+    "tipo": "examen",
+    "deadline": "2025-07-15"
+  }
+]

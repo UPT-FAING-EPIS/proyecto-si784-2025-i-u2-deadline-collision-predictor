@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Deadline Collision Predictor</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="landing">
+    <div class="landing-container">
+        <h1><i class="fas fa-calendar-check"></i> Deadline Collision Predictor</h1>
+        <p>Organiza tus tareas, evita colisiones de deadlines y mejora tu rendimiento académico.</p>
+        <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="Calendario" style="width:120px;margin:2rem 0;">
+        <div class="landing-buttons">
+            <button id="loginBtn" class="landing-btn"><i class="fas fa-sign-in-alt"></i> Iniciar sesión</button>
+            <button id="registerBtn" class="landing-btn"><i class="fas fa-user-plus"></i> Registrarse</button>
+        </div>
+    </div>
+    <!-- Modal de login/registro -->
+    <div id="authModal" class="modal">
+        <div class="modal-content" style="max-width:350px;">
+            <span class="close">&times;</span>
+            <h2 id="authTitle">Iniciar sesión</h2>
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user"></i> Usuario</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Contraseña</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="submit-btn" id="authSubmitBtn">Entrar</button>
+            </form>
+        </div>
+    </div>
+    <script src="auth.js"></script>
+</body>
+</html>

@@ -1,13 +1,29 @@
 const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 const path = require('path');
+const authRoutes = require('./routes/auth');
+const eventosRoutes = require('./routes/eventos');
+const aiRouter = require('./routes/ai');
+
 const app = express();
-const taskRoutes = require('./routes/taskRoutes');
 
-app.use(express.json());
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api/tareas', taskRoutes);
 
-const PORT = 3000;
+// Rutas
+app.use('/api/auth', authRoutes);
+app.use('/api/eventos', eventosRoutes);
+app.use('/api/ai', aiRouter);
+
+// Ruta principal
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
