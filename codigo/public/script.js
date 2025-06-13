@@ -6,6 +6,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Mostrar nombre de usuario
+    function getUserFromToken(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.username;
+        } catch {
+            return '';
+        }
+    }
+    const userNameSpan = document.getElementById('userName');
+    if (userNameSpan) {
+        userNameSpan.textContent = '👤 ' + getUserFromToken(token);
+    }
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.onclick = function() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        };
+    }
+
     // Verificar que axios esté disponible
     if (typeof axios === 'undefined') {
         console.error('Error: Axios no está cargado. Asegúrate de incluir la librería axios.');
@@ -16,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar axios con timeout
     axios.defaults.timeout = 10000; // 10 segundos
     axios.defaults.baseURL = window.location.origin;
+
+    let eventosUsuario = [];
+    let bienvenidaMostrada = false;
 
     // Inicialización del calendario
     const calendarEl = document.getElementById('calendar');
@@ -37,8 +61,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Authorization': 'Bearer ' + token }
             })
             .then(response => {
-                // Adaptar los eventos al formato de FullCalendar
-                const eventos = response.data.map(ev => ({
+                eventosUsuario = response.data;
+                const eventos = eventosUsuario.map(ev => ({
                     id: ev.id,
                     title: ev.nombre,
                     start: ev.deadline,
@@ -62,7 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
         eventClick: function(info) {
-            // Mostrar detalles del evento en un alert o modal
             const evento = info.event;
             const fecha = new Date(evento.start).toLocaleString('es-ES', {
                 weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -114,13 +137,21 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Mensaje inicial del asistente
-    addMessage('¡Hola! Soy tu asistente para programar tareas. Puedes escribirme de forma natural, por ejemplo: "Tengo un examen de Calidad el jueves 12 de junio" o "Necesito entregar el proyecto de Sistemas el próximo lunes".');
+    // Mensaje inicial del asistente SOLO una vez
+    function mostrarBienvenida() {
+        if (!bienvenidaMostrada) {
+            addMessage('¡Hola! Soy tu asistente para programar tareas. Puedes escribirme de forma natural, por ejemplo: "Tengo un examen de Calidad el jueves 12 de junio" o "Necesito entregar el proyecto de Sistemas el próximo lunes".');
+            bienvenidaMostrada = true;
+        }
+    }
 
     // Abrir modal
     addTaskBtn.onclick = function() {
         modal.style.display = "block";
         chatInput.focus();
+        if (chatMessages.children.length === 0) {
+            mostrarBienvenida();
+        }
     }
 
     // Cerrar modal
@@ -142,10 +173,44 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!text) return;
         addMessage(text, true);
         chatInput.value = '';
+
+        // Comandos especiales para notificaciones
+        if (/eventos próximos|eventos proximos|próximos eventos|proximos eventos|tengo eventos próximos|tengo eventos proximos/i.test(text)) {
+            notificarEventosProximos();
+            return;
+        }
+        if (/colisiones|conflictos|choques|tengo colisiones/i.test(text)) {
+            notificarColisiones();
+            return;
+        }
+
         try {
             const response = await axios.post('/api/ai/process', { text });
             const taskData = response.data;
             addMessage(`Entendido. Voy a crear una ${taskData.tipo} llamada "${taskData.nombre}" para el ${new Date(taskData.deadline).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`);
+
+            // Comprobar colisión de eventos en la misma fecha (solo para agregar)
+            const fechaNueva = new Date(taskData.deadline);
+            const colision = eventosUsuario.find(ev => {
+                const fechaEv = new Date(ev.deadline);
+                return fechaEv.toDateString() === fechaNueva.toDateString();
+            });
+            if (colision) {
+                // Buscar fecha alternativa (primer día libre antes del deadline)
+                let fechaSugerida = new Date(fechaNueva);
+                let intentos = 0;
+                while (intentos < 7) {
+                    fechaSugerida.setDate(fechaSugerida.getDate() - 1);
+                    const existe = eventosUsuario.find(ev => {
+                        const f = new Date(ev.deadline);
+                        return f.toDateString() === fechaSugerida.toDateString();
+                    });
+                    if (!existe && fechaSugerida > new Date()) break;
+                    intentos++;
+                }
+                addMessage(`⚠️ Atención: Ya tienes otro evento ese día. Te recomiendo organizarte y trabajar en tus pendientes el ${fechaSugerida.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`);
+            }
+
             // POST directo a /api/eventos
             try {
                 const res = await axios.post('/api/eventos', {
@@ -286,4 +351,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar colisiones cada 5 minutos
     setInterval(checkCollisions, 300000);
     checkCollisions(); // Verificar al cargar la página
+
+    // Notificación de eventos próximos (3 días antes)
+    function notificarEventosProximos() {
+        const hoy = new Date();
+        let encontrados = false;
+        eventosUsuario.forEach(ev => {
+            const fechaEv = new Date(ev.deadline);
+            const diff = (fechaEv - hoy) / (1000 * 60 * 60 * 24);
+            if (diff > 0 && diff <= 3) {
+                addMessage(`⏰ ¡Tienes un ${ev.tipo} próximo! "${ev.nombre}" es el ${fechaEv.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}. ¡No lo olvides!`);
+                encontrados = true;
+            }
+        });
+        if (!encontrados) addMessage('No tienes eventos próximos en los próximos 3 días.');
+    }
+
+    // Notificación de colisiones
+    function notificarColisiones() {
+        let colisiones = [];
+        for (let i = 0; i < eventosUsuario.length; i++) {
+            for (let j = i + 1; j < eventosUsuario.length; j++) {
+                const fecha1 = new Date(eventosUsuario[i].deadline).toDateString();
+                const fecha2 = new Date(eventosUsuario[j].deadline).toDateString();
+                if (fecha1 === fecha2) {
+                    colisiones.push({
+                        fecha: fecha1,
+                        eventos: [eventosUsuario[i], eventosUsuario[j]]
+                    });
+                }
+            }
+        }
+        if (colisiones.length > 0) {
+            colisiones.forEach(col => {
+                addMessage(`⚠️ Tienes colisión de eventos el ${col.fecha}:\n- ${col.eventos[0].nombre} (${col.eventos[0].tipo})\n- ${col.eventos[1].nombre} (${col.eventos[1].tipo})`);
+            });
+        } else {
+            addMessage('No tienes colisiones de eventos en tu calendario.');
+        }
+    }
 });

@@ -441,3 +441,34 @@ main {
         padding: 1.5rem 0.5rem;
     }
 }
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+#userName {
+    font-weight: 500;
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+.logout-btn {
+    background: #fff;
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+    border-radius: 2rem;
+    padding: 0.4rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.2s, color 0.2s;
+}
+.logout-btn:hover {
+    background: var(--danger-color);
+    color: #fff;
+}
