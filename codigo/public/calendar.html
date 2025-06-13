@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deadline Collision Predictor</title>
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -24,6 +25,38 @@
     <main>
         <div class="calendar-container">
             <div id="calendar"></div>
+        </div>
+
+        <!-- Panel lateral para detalles del evento -->
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="eventDetailsPanel" aria-labelledby="eventDetailsPanelLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="eventDetailsPanelLabel">Detalles del Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <div class="event-details">
+                    <h4 id="eventTitle" class="mb-3"></h4>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-tag"></i> Tipo:</strong>
+                        <span id="eventType"></span>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-calendar-alt"></i> Fecha:</strong>
+                        <span id="eventDate"></span>
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-clock"></i> Hora:</strong>
+                        <span id="eventTime"></span>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="eventCompleted">
+                        <label class="form-check-label" for="eventCompleted">Marcar como completado</label>
+                    </div>
+                    <button class="btn btn-danger w-100" id="deleteEventBtn">
+                        <i class="fas fa-trash"></i> Eliminar Evento
+                    </button>
+                </div>
+            </div>
         </div>
 
         <button id="addTaskBtn" class="floating-btn">
@@ -89,6 +122,7 @@
     </div>
 
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="script.js"></script>
 </body>

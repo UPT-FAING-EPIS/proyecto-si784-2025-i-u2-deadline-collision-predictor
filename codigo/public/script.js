@@ -66,7 +66,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     id: ev.id,
                     title: ev.nombre,
                     start: ev.deadline,
-                    extendedProps: { tipo: ev.tipo }
+                    extendedProps: { 
+                        tipo: ev.tipo,
+                        completado: ev.completado || false
+                    }
                 }));
                 successCallback(eventos);
             })
@@ -77,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
         eventDidMount: function(info) {
+            // Aplicar clase según el tipo
             if (info.event.extendedProps.tipo === 'examen') {
                 info.el.classList.add('urgent');
             } else if (info.event.extendedProps.tipo === 'proyecto') {
@@ -84,18 +88,91 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 info.el.classList.add('normal');
             }
+            
+            // Aplicar clase si está completado
+            if (info.event.extendedProps.completado) {
+                info.el.classList.add('completed');
+            }
         },
         eventClick: function(info) {
             const evento = info.event;
-            const fecha = new Date(evento.start).toLocaleString('es-ES', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            const fecha = new Date(evento.start);
+            
+            // Actualizar contenido del panel
+            document.getElementById('eventTitle').textContent = evento.title;
+            document.getElementById('eventType').textContent = evento.extendedProps.tipo;
+            document.getElementById('eventDate').textContent = fecha.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
-            alert(
-                `📌 Detalles del evento:\n\n` +
-                `Nombre: ${evento.title}\n` +
-                `Tipo: ${evento.extendedProps.tipo}\n` +
-                `Fecha: ${fecha}`
-            );
+            document.getElementById('eventTime').textContent = fecha.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Actualizar estado del checkbox
+            const completedCheckbox = document.getElementById('eventCompleted');
+            completedCheckbox.checked = evento.extendedProps.completado || false;
+            
+            // Configurar evento del checkbox
+            completedCheckbox.onchange = async function() {
+                try {
+                    const completadoValue = this.checked ? 1 : 0; // Convertir booleano a 1 o 0
+                    const response = await axios.put(`/api/eventos/${evento.id}`, {
+                        completado: completadoValue
+                    }, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+
+                    if (response.status === 200) {
+                        // Actualizar el evento en el calendario
+                        evento.setExtendedProp('completado', this.checked);
+                        
+                        // Actualizar la apariencia del evento directamente en el DOM
+                        const eventElement = info.el; // info.el ya está disponible en eventClick closure
+                        if (this.checked) {
+                            eventElement.classList.add('completed');
+                        } else {
+                            eventElement.classList.remove('completed');
+                        }
+
+                        // También actualizamos el evento en el array local para consistencia
+                        const index = eventosUsuario.findIndex(ev => ev.id === evento.id);
+                        if (index !== -1) {
+                            eventosUsuario[index].completado = this.checked;
+                        }
+                        
+                        // No es necesario refetchEvents() para el cambio visual inmediato
+                        // Solo si hubiera cambios más complejos en el evento que requieran recarga total.
+                    }
+                } catch (error) {
+                    console.error('Error al actualizar estado:', error);
+                    this.checked = !this.checked; // Revertir el cambio si hay error
+                    alert('Error al actualizar el estado del evento. Por favor, revisa la consola para más detalles.');
+                }
+            };
+            
+            // Configurar evento del botón eliminar
+            document.getElementById('deleteEventBtn').onclick = async function() {
+                if (confirm('¿Estás seguro de que deseas eliminar este evento?')) {
+                    try {
+                        await axios.delete(`/api/eventos/${evento.id}`, {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        evento.remove();
+                        bootstrap.Offcanvas.getInstance(document.getElementById('eventDetailsPanel')).hide();
+                    } catch (error) {
+                        console.error('Error al eliminar evento:', error);
+                        alert('Error al eliminar el evento');
+                    }
+                }
+            };
+            
+            // Mostrar el panel
+            const eventPanel = new bootstrap.Offcanvas(document.getElementById('eventDetailsPanel'));
+            eventPanel.show();
         }
     });
     calendar.render();
