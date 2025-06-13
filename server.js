@@ -8,6 +8,8 @@ const aiRouter = require('./routes/ai');
 
 const app = express();
 
+console.log('Iniciando aplicación...');
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
@@ -20,6 +22,7 @@ app.use('/api/ai', aiRouter);
 
 // Ruta principal
 app.get('/', (req, res) => {
+    console.log('Ruta / solicitada');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
