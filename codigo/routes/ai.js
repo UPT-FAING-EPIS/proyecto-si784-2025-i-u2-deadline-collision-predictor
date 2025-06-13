@@ -142,30 +142,33 @@ function determineTaskType(text) {
 }
 
 function extractTaskName(text) {
+    console.log('extractTaskName: Input text:', text); // Nuevo log
+
     // Paso 1: Eliminar todos los patrones de fecha y hora del texto
     let cleanedText = text
         .replace(/(?:el\s*)?([a-záéíóúñ]+)\s*(\d{1,2})\s*de\s*([a-záéíóúñ]+)/gi, '') // ej. "el jueves 19 de junio"
         .replace(/(?:el\s*)?(\d{1,2})\s*de\s*([a-záéíóúñ]+)/gi, '') // ej. "el 19 de junio"
         .replace(/este\s+([a-záéíóúñ]+)/gi, '') // ej. "este lunes"
-        .replace(/(?:el|para el|el día|el próximo|el siguiente)?\s*([a-záéíóúñ]+)/gi, '') // ej. "el lunes", "el próximo lunes"
         .replace(/mañana/gi, '')
         .replace(/la próxima semana|siguiente semana/gi, '')
         .replace(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/gi, '') // ej. "2024-06-19" o "19/06/2024"
         .replace(/(?:a las|las)?\s*(\d{1,2})(?::(\d{2}))?\s*(?:am|pm)?/gi, ''); // ej. "a las 8 am"
+    
+    console.log('extractTaskName: After date/time removal:', cleanedText.trim()); // Nuevo log
 
     // Paso 2: Eliminar las frases introductorias que señalan la acción de agregar una tarea.
-    // Esto es menos agresivo para no eliminar partes del nombre real de la tarea.
+    // Hacemos esta regex menos agresiva para no eliminar el nombre de la tarea.
     const introductoryRegex = /^(?:agrega|crea|añade|registrar|tengo|necesito|debo|tener|hacer|realizar|entregar|que\s+tengo)\s*(?:una\s+|un\s+|el\s+|la\s+)?/i;
     cleanedText = cleanedText.replace(introductoryRegex, '').trim();
 
-    // Paso 3: Eliminar las frases que especifican el tipo de tarea, para aislar el nombre puro.
-    const taskTypePhraseRegex = /^(?:tarea|examen|proyecto|exposicion|deber|ejercicio|actividad)(?:\s+de)?\s*/i;
-    cleanedText = cleanedText.replace(taskTypePhraseRegex, '').trim();
+    console.log('extractTaskName: After introductory phrase removal:', cleanedText);
 
     if (cleanedText.length === 0) {
+        console.log('extractTaskName: Returning "Tarea sin nombre" due to empty string.'); // Nuevo log
         return 'Tarea sin nombre'; 
     }
 
+    console.log('extractTaskName: Final cleaned text:', cleanedText);
     return cleanedText.charAt(0).toUpperCase() + cleanedText.slice(1);
 }
 
