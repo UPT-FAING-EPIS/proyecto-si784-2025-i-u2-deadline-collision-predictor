@@ -174,18 +174,85 @@ document.addEventListener('DOMContentLoaded', function() {
         addMessage(text, true);
         chatInput.value = '';
 
+        const textLower = text.toLowerCase();
+
         // Comandos especiales para notificaciones
-        if (/eventos próximos|eventos proximos|próximos eventos|proximos eventos|tengo eventos próximos|tengo eventos proximos/i.test(text)) {
+        if (textLower.includes('eventos próximos') || textLower.includes('eventos proximos') || textLower.includes('próximos eventos') || textLower.includes('proximos eventos') || textLower.includes('tengo eventos próximos') || textLower.includes('tengo eventos proximos')) {
             notificarEventosProximos();
             return;
         }
-        if (/colisiones|conflictos|choques|tengo colisiones/i.test(text)) {
+        if (textLower.includes('colisiones') || textLower.includes('conflictos') || textLower.includes('choques') || textLower.includes('tengo colisiones')) {
             notificarColisiones();
             return;
         }
 
-        // Nuevo: Detectar si es una pregunta sobre eventos (ej. para mañana)
-        if (text.toLowerCase().includes('mañana') || text.toLowerCase().includes('que tengo') || text.toLowerCase().includes('eventos')) {
+        // Prioridad 1: Detectar si es una INTENCIÓN DE AGREGAR/CREAR tarea
+        const isAddIntent = textLower.startsWith('agrega') ||
+                            textLower.startsWith('crea') ||
+                            textLower.startsWith('añade') ||
+                            textLower.includes('necesito agregar') ||
+                            textLower.includes('debo hacer') ||
+                            textLower.includes('registrar') ||
+                            (textLower.includes('tengo') && !textLower.includes('tengo eventos') && !textLower.includes('tengo colisiones'));
+        
+        if (isAddIntent) {
+            try {
+                const response = await axios.post('/api/ai/process', { text }, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const taskData = response.data;
+                addMessage(`Entendido. Voy a crear una ${taskData.tipo} llamada "${taskData.nombre}" para el ${new Date(taskData.deadline).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} ${new Date(taskData.deadline).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.`);
+
+                // Comprobar colisión de eventos en la misma fecha (solo para agregar)
+                const fechaNueva = new Date(taskData.deadline);
+                const colision = eventosUsuario.find(ev => {
+                    const fechaEv = new Date(ev.deadline);
+                    return fechaEv.toDateString() === fechaNueva.toDateString();
+                });
+                if (colision) {
+                    // Buscar fecha alternativa (primer día libre antes del deadline)
+                    let fechaSugerida = new Date(fechaNueva);
+                    let intentos = 0;
+                    while (intentos < 7) {
+                        fechaSugerida.setDate(fechaSugerida.getDate() - 1);
+                        const existe = eventosUsuario.find(ev => {
+                            const f = new Date(ev.deadline);
+                            return f.toDateString() === fechaSugerida.toDateString();
+                        });
+                        if (!existe && fechaSugerida > new Date()) break;
+                        intentos++;
+                    }
+                    addMessage(`⚠️ Atención: Ya tienes otro evento ese día. Te recomiendo organizarte y trabajar en tus pendientes el ${fechaSugerida.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`);
+                }
+
+                // POST directo a /api/eventos
+                try {
+                    const res = await axios.post('/api/eventos', {
+                        nombre: taskData.nombre,
+                        tipo: taskData.tipo,
+                        deadline: taskData.deadline
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+                    if (res.status === 200 || res.status === 201) {
+                        calendar.refetchEvents();
+                        addMessage('¡Tarea agregada exitosamente! ¿Necesitas agregar otra tarea?');
+                    }
+                } catch (err) {
+                    addMessage('Lo siento, hubo un error al guardar la tarea. Por favor, inténtalo de nuevo.');
+                }
+            } catch (error) {
+                console.error('Error procesando el texto:', error);
+                addMessage('Lo siento, no pude entender completamente tu mensaje. ¿Podrías reformularlo? Por ejemplo: "Tengo un examen de Matemáticas el jueves 15 de junio"');
+            }
+            return; // Importante para evitar que se ejecute la lógica de consulta
+        }
+
+        // Prioridad 2: Si no es una intención de agregar, entonces detecta si es una pregunta sobre eventos
+        if (textLower.includes('mañana') || textLower.includes('que tengo') || textLower.includes('eventos')) {
             try {
                 const response = await axios.post('/api/ai/ask', { pregunta: text }, {
                     headers: { 'Authorization': 'Bearer ' + token }
@@ -198,59 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Lógica existente para procesar nuevas tareas
-        try {
-            const response = await axios.post('/api/ai/process', { text }, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const taskData = response.data;
-            addMessage(`Entendido. Voy a crear una ${taskData.tipo} llamada "${taskData.nombre}" para el ${new Date(taskData.deadline).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`);
-
-            // Comprobar colisión de eventos en la misma fecha (solo para agregar)
-            const fechaNueva = new Date(taskData.deadline);
-            const colision = eventosUsuario.find(ev => {
-                const fechaEv = new Date(ev.deadline);
-                return fechaEv.toDateString() === fechaNueva.toDateString();
-            });
-            if (colision) {
-                // Buscar fecha alternativa (primer día libre antes del deadline)
-                let fechaSugerida = new Date(fechaNueva);
-                let intentos = 0;
-                while (intentos < 7) {
-                    fechaSugerida.setDate(fechaSugerida.getDate() - 1);
-                    const existe = eventosUsuario.find(ev => {
-                        const f = new Date(ev.deadline);
-                        return f.toDateString() === fechaSugerida.toDateString();
-                    });
-                    if (!existe && fechaSugerida > new Date()) break;
-                    intentos++;
-                }
-                addMessage(`⚠️ Atención: Ya tienes otro evento ese día. Te recomiendo organizarte y trabajar en tus pendientes el ${fechaSugerida.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`);
-            }
-
-            // POST directo a /api/eventos
-            try {
-                const res = await axios.post('/api/eventos', {
-                    nombre: taskData.nombre,
-                    tipo: taskData.tipo,
-                    deadline: taskData.deadline
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    }
-                });
-                if (res.status === 200 || res.status === 201) {
-                    calendar.refetchEvents();
-                    addMessage('¡Tarea agregada exitosamente! ¿Necesitas agregar otra tarea?');
-                }
-            } catch (err) {
-                addMessage('Lo siento, hubo un error al guardar la tarea. Por favor, inténtalo de nuevo.');
-            }
-        } catch (error) {
-            console.error('Error procesando el texto:', error);
-            addMessage('Lo siento, no pude entender completamente tu mensaje. ¿Podrías reformularlo? Por ejemplo: "Tengo un examen de Matemáticas el jueves 15 de junio"');
-        }
+        // Si no coincide con ninguna de las anteriores (ni agregar, ni preguntar sobre mañana)
+        addMessage('Lo siento, no pude entender tu solicitud. Por favor, intenta reformularla. Recuerda que puedo ayudarte a agregar tareas o consultar tus eventos de mañana.');
     };
 
     // Función para verificar colisiones

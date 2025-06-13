@@ -17,98 +17,114 @@ function normalizeDayName(day) {
 }
 
 function extractDate(text) {
+    console.log('extractDate: Input text:', text); // Nuevo log
     const today = moment();
     const tomorrow = moment().add(1, 'days');
     const nextWeek = moment().add(1, 'week');
 
-    // 1. "el jueves 19 de junio" o "jueves 19 de junio"
-    let match = text.match(/(?:el\s*)?([a-záéíóúñ]+)\s*(\d{1,2})\s*de\s*([a-záéíóúñ]+)/i);
-    if (match) {
-        const days = {
-            'lunes': 1, 'martes': 2, 'miercoles': 3, 'miércoles': 3, 'jueves': 4,
-            'viernes': 5, 'sabado': 6, 'sábado': 6, 'domingo': 0
-        };
-        const dayOfWeek = days[normalizeDayName(match[1])];
-        const day = parseInt(match[2]);
-        const month = moment().month(normalizeDayName(match[3]));
-        let year = today.year();
-        let date = moment([year, month.month(), day]);
-        if (date.isBefore(today, 'day')) {
-            date = moment([year + 1, month.month(), day]);
-        }
-        if (date.day() !== dayOfWeek) {
-            date = date.day(dayOfWeek);
-            if (date.isBefore(today, 'day')) {
-                date.add(7, 'days');
-            }
-        }
-        return date;
-    }
+    let date = null;
 
-    // 2. "el 19 de junio"
-    match = text.match(/(?:el\s*)?(\d{1,2})\s*de\s*([a-záéíóúñ]+)/i);
-    if (match) {
-        const day = parseInt(match[1]);
-        const month = moment().month(normalizeDayName(match[2]));
-        let year = today.year();
-        let date = moment([year, month.month(), day]);
-        if (date.isBefore(today, 'day')) {
-            date = moment([year + 1, month.month(), day]);
-        }
-        return date;
-    }
+    let match;
 
-    // 3. "este lunes", "este sábado" (con o sin tildes)
-    match = text.match(/este\s+([a-záéíóúñ]+)/i);
-    if (match) {
-        const days = {
-            'lunes': 1, 'martes': 2, 'miercoles': 3, 'miércoles': 3, 'jueves': 4,
-            'viernes': 5, 'sabado': 6, 'sábado': 6, 'domingo': 0
-        };
-        const targetDay = days[normalizeDayName(match[1])];
-        if (typeof targetDay === 'undefined') return null;
-        const currentDay = today.day();
-        let daysToAdd = targetDay - currentDay;
-        if (daysToAdd < 0) daysToAdd += 7;
-        return today.clone().add(daysToAdd, 'days');
-    }
-
-    // 4. "el lunes", "el próximo lunes"
-    match = text.match(/(?:el|para el|el día|el próximo|el siguiente)?\s*([a-záéíóúñ]+)/i);
-    if (match) {
-        const days = {
-            'lunes': 1, 'martes': 2, 'miercoles': 3, 'miércoles': 3, 'jueves': 4,
-            'viernes': 5, 'sabado': 6, 'sábado': 6, 'domingo': 0
-        };
-        const targetDay = days[normalizeDayName(match[1])];
-        if (typeof targetDay === 'undefined') return null;
-        const currentDay = today.day();
-        let daysToAdd = targetDay - currentDay;
-        if (daysToAdd <= 0) daysToAdd += 7;
-        return today.clone().add(daysToAdd, 'days');
-    }
-
-    // 5. "mañana"
-    if (/mañana/i.test(text)) {
-        return tomorrow;
-    }
-
-    // 6. "la próxima semana" o "siguiente semana"
-    if (/la próxima semana|siguiente semana/i.test(text)) {
-        return nextWeek;
-    }
-
-    // 7. Fechas absolutas tipo 2024-06-19 o 19/06/2024
+    // 1. Fechas absolutas tipo 2024-06-19 o 19/06/2024 (Prioridad alta)
     match = text.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
     if (match) {
         let day = parseInt(match[1]);
         let month = parseInt(match[2]) - 1;
         let year = parseInt(match[3]);
-        if (year < 100) year += 2000;
-        return moment([year, month, day]);
+        if (year < 100) year += 2000; // Asume años de 2 dígitos son del 2000
+        date = moment([year, month, day]);
+        console.log('extractDate: Pattern 1 match. Date:', date.format('YYYY-MM-DD')); // Nuevo log
+    } 
+    // 2. "el jueves 19 de junio" o "jueves 19 de junio"
+    else if (match = text.match(/(?:el\s*)?([a-záéíóúñ]+)\s*(\d{1,2})\s*de\s*([a-záéíóúñ]+)/i)) {
+        const day = parseInt(match[2]);
+        const month = moment().month(normalizeDayName(match[3]));
+        let year = today.year();
+        date = moment([year, month.month(), day]);
+        if (date.isBefore(today, 'day')) {
+            date = moment([year + 1, month.month(), day]);
+        }
+        console.log('extractDate: Pattern 2 match. Date:', date.format('YYYY-MM-DD')); // Nuevo log
+    }
+    // 3. "el 19 de junio"
+    else if (match = text.match(/(?:el\s*)?(\d{1,2})\s*de\s*([a-záéíóúñ]+)/i)) {
+        const day = parseInt(match[1]);
+        const month = moment().month(normalizeDayName(match[2]));
+        let year = today.year();
+        date = moment([year, month.month(), day]);
+        if (date.isBefore(today, 'day')) {
+            date = moment([year + 1, month.month(), day]);
+        }
+        console.log('extractDate: Pattern 3 match. Date:', date.format('YYYY-MM-DD')); // Nuevo log
+    }
+    // 4. "mañana"
+    else if (/mañana/i.test(text)) {
+        date = tomorrow;
+        console.log('extractDate: Pattern 4 match (mañana). Date:', date.format('YYYY-MM-DD')); // Nuevo log
+    }
+    // 5. "este lunes", "este sábado" (con o sin tildes)
+    else if (match = text.match(/este\s+([a-záéíóúñ]+)/i)) {
+        const days = {
+            'lunes': 1, 'martes': 2, 'miercoles': 3, 'miércoles': 3, 'jueves': 4,
+            'viernes': 5, 'sabado': 6, 'sábado': 6, 'domingo': 0
+        };
+        const targetDay = days[normalizeDayName(match[1])];
+        if (typeof targetDay !== 'undefined') {
+            const currentDay = today.day();
+            let daysToAdd = targetDay - currentDay;
+            if (daysToAdd < 0) daysToAdd += 7; 
+            date = today.clone().add(daysToAdd, 'days');
+        }
+        console.log('extractDate: Pattern 5 match (este dia). Date:', date ? date.format('YYYY-MM-DD') : 'null'); // Nuevo log
+    }
+    // 6. "el lunes", "el próximo lunes"
+    else if (match = text.match(/(?:el|para el|el día|el próximo|el siguiente)?\s*([a-záéíóúñ]+)/i)) {
+        const days = {
+            'lunes': 1, 'martes': 2, 'miercoles': 3, 'miércoles': 3, 'jueves': 4,
+            'viernes': 5, 'sabado': 6, 'sábado': 6, 'domingo': 0
+        };
+        const targetDay = days[normalizeDayName(match[1])];
+        if (typeof targetDay !== 'undefined') {
+            const currentDay = today.day();
+            let daysToAdd = targetDay - currentDay;
+            if (daysToAdd <= 0) daysToAdd += 7; 
+            date = today.clone().add(daysToAdd, 'days');
+        }
+        console.log('extractDate: Pattern 6 match (el dia). Date:', date ? date.format('YYYY-MM-DD') : 'null'); // Nuevo log
+    }
+    // 7. "la próxima semana" o "siguiente semana"
+    else if (/la próxima semana|siguiente semana/i.test(text)) {
+        date = nextWeek;
+        console.log('extractDate: Pattern 7 match (proxima semana). Date:', date.format('YYYY-MM-DD')); // Nuevo log
     }
 
-    return null;
+    // Si no se detectó ninguna fecha explícita, se asume hoy.
+    if (!date) {
+        date = today.clone();
+        console.log('extractDate: No explicit date found, defaulting to today. Date:', date.format('YYYY-MM-DD')); // Nuevo log
+    }
+
+    // Extraer la hora si está presente en el texto (se aplica a cualquier fecha detectada)
+    const timeMatch = text.match(/(?:a las|las)?\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if (date && timeMatch) {
+        let hours = parseInt(timeMatch[1]);
+        const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+        const ampm = timeMatch[3] ? timeMatch[3].toLowerCase() : '';
+
+        if (ampm === 'pm' && hours < 12) {
+            hours += 12;
+        } else if (ampm === 'am' && hours === 12) { // 12 AM is 00 hours
+            hours = 0;
+        }
+        date.hour(hours).minute(minutes).second(0).millisecond(0);
+        console.log('extractDate: Time matched. Final Date with time:', date.format('YYYY-MM-DDTHH:mm')); // Nuevo log
+    } else if (date && !timeMatch) {
+        console.log('extractDate: No time matched. Final Date without time:', date.format('YYYY-MM-DD')); // Nuevo log
+    }
+
+    console.log('extractDate: Returning date. isValid:', date ? date.isValid() : 'N/A'); // Nuevo log
+    return date;
 }
 
 function determineTaskType(text) {
@@ -126,13 +142,31 @@ function determineTaskType(text) {
 }
 
 function extractTaskName(text) {
-    const cleanText = text
-        .replace(/(?:el|para el|el día|el próximo|el siguiente)\s+(?:lunes|martes|miércoles|jueves|viernes|sábado|domingo)/gi, '')
-        .replace(/(?:el|para el|el día)?\s*\d{1,2}\s*(?:de|del)?\s*(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/gi, '')
-        .replace(/(?:mañana|la próxima semana|siguiente semana)/gi, '')
-        .replace(/(?:tengo|necesito|debo|tener|hacer|realizar|entregar)/gi, '')
-        .trim();
-    return cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
+    // Paso 1: Eliminar todos los patrones de fecha y hora del texto
+    let cleanedText = text
+        .replace(/(?:el\s*)?([a-záéíóúñ]+)\s*(\d{1,2})\s*de\s*([a-záéíóúñ]+)/gi, '') // ej. "el jueves 19 de junio"
+        .replace(/(?:el\s*)?(\d{1,2})\s*de\s*([a-záéíóúñ]+)/gi, '') // ej. "el 19 de junio"
+        .replace(/este\s+([a-záéíóúñ]+)/gi, '') // ej. "este lunes"
+        .replace(/(?:el|para el|el día|el próximo|el siguiente)?\s*([a-záéíóúñ]+)/gi, '') // ej. "el lunes", "el próximo lunes"
+        .replace(/mañana/gi, '')
+        .replace(/la próxima semana|siguiente semana/gi, '')
+        .replace(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/gi, '') // ej. "2024-06-19" o "19/06/2024"
+        .replace(/(?:a las|las)?\s*(\d{1,2})(?::(\d{2}))?\s*(?:am|pm)?/gi, ''); // ej. "a las 8 am"
+
+    // Paso 2: Eliminar las frases introductorias que señalan la acción de agregar una tarea.
+    // Esto es menos agresivo para no eliminar partes del nombre real de la tarea.
+    const introductoryRegex = /^(?:agrega|crea|añade|registrar|tengo|necesito|debo|tener|hacer|realizar|entregar|que\s+tengo)\s*(?:una\s+|un\s+|el\s+|la\s+)?/i;
+    cleanedText = cleanedText.replace(introductoryRegex, '').trim();
+
+    // Paso 3: Eliminar las frases que especifican el tipo de tarea, para aislar el nombre puro.
+    const taskTypePhraseRegex = /^(?:tarea|examen|proyecto|exposicion|deber|ejercicio|actividad)(?:\s+de)?\s*/i;
+    cleanedText = cleanedText.replace(taskTypePhraseRegex, '').trim();
+
+    if (cleanedText.length === 0) {
+        return 'Tarea sin nombre'; 
+    }
+
+    return cleanedText.charAt(0).toUpperCase() + cleanedText.slice(1);
 }
 
 function getCurrentDate() {
@@ -146,10 +180,17 @@ function getTomorrowDate() {
 router.post('/process', (req, res) => {
     try {
         const { text } = req.body;
+        console.log('Received text for /process:', text); // Debugging log
         const date = extractDate(text);
+        console.log('Extracted date:', date ? date.format('YYYY-MM-DDTHH:mm') : 'null', 'isValid:', date ? date.isValid() : 'N/A'); // Debugging log
         if (!date) {
             return res.status(400).json({
-                error: 'No se pudo detectar una fecha válida en el texto'
+                error: 'No se pudo detectar ninguna fecha en el texto proporcionado.'
+            });
+        }
+        if (!date.isValid()) {
+            return res.status(400).json({
+                error: `La fecha detectada es inválida: ${date.format('YYYY-MM-DDTHH:mm')} (Texto original: "${text}")`
             });
         }
         const taskData = {
@@ -159,9 +200,9 @@ router.post('/process', (req, res) => {
         };
         res.json(taskData);
     } catch (error) {
-        console.error('Error procesando el texto:', error);
+        console.error('Error procesando el texto en /process:', error);
         res.status(500).json({
-            error: 'Error al procesar el texto'
+            error: 'Error interno al procesar el texto: ' + error.message
         });
     }
 });
