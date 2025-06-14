@@ -20,7 +20,7 @@ jobs:
           MYSQL_PASSWORD: testpassword
         ports:
           - 3306:3306
-        options: >
+        options: |-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
           --health-timeout=5s
