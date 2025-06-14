@@ -1,0 +1,42 @@
+name: Terraform CI
+
+on:
+  push:
+    paths:
+      - 'infraestructura/**'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    paths:
+      - 'infraestructura/**'
+      - '.github/workflows/terraform.yml'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Login en Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Inicializar Terraform
+        working-directory: infraestructura
+        run: terraform init
+
+      - name: Validar Terraform
+        working-directory: infraestructura
+        run: terraform validate
+
+      - name: Planificar Terraform
+        working-directory: infraestructura
+        run: terraform plan
