@@ -25,7 +25,7 @@ jobs:
           --health-interval=10s
           --health-timeout=30s
           --health-retries=20
-          --start-period=30s
+          --start-period=60s
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3

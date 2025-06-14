@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
@@ -18,6 +18,6 @@ CREATE TABLE IF NOT EXISTS eventos (
 
 -- Insertar un usuario de prueba para las pruebas de Playwright
 -- Contraseña: password123 (hash generado con bcryptjs)
-INSERT IGNORE INTO users (username, password_hash) VALUES (
+INSERT IGNORE INTO usuarios (username, password_hash) VALUES (
     'test@example.com', '$2a$10$tJ9fFpL5JpX2oD.xG/i.1e/n.o2i/L.e/Xl.o.e/X.2o/o2'
 ); 
