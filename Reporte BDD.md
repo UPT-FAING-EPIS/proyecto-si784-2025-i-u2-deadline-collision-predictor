@@ -2,8 +2,9 @@
 
 ## Proyecto: Deadline Collision Predictor
 
-**Autor:** [Tu Nombre]  
-**Fecha:** [Fecha de entrega]
+**Autor:** Angel Vargas, Angel Chino, Juan Luna
+
+
 
 ---
 
