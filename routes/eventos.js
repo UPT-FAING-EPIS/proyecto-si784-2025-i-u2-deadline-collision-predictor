@@ -74,4 +74,37 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
+// Nueva ruta para obtener colisiones de eventos
+router.get('/colisiones', auth, async (req, res) => {
+    try {
+        const [colisionesRaw] = await pool.query(
+            `SELECT DATE(deadline) as fecha_colision
+             FROM eventos
+             WHERE usuario_id = ?
+             GROUP BY DATE(deadline), usuario_id
+             HAVING COUNT(*) > 1`,
+            [req.user.id]
+        );
+
+        if (colisionesRaw.length === 0) {
+            return res.json([]); // No hay colisiones
+        }
+
+        // Obtener todos los eventos para las fechas con colisiones
+        const fechasColision = colisionesRaw.map(c => c.fecha_colision);
+        const [eventosConColision] = await pool.query(
+            `SELECT id, nombre, tipo, deadline, completado
+             FROM eventos
+             WHERE usuario_id = ? AND DATE(deadline) IN (?)
+             ORDER BY deadline`,
+            [req.user.id, fechasColision]
+        );
+
+        res.json(eventosConColision);
+    } catch (error) {
+        console.error('Error al obtener colisiones de eventos:', error);
+        res.status(500).json({ error: 'Error al obtener colisiones de eventos' });
+    }
+});
+
 module.exports = router; 

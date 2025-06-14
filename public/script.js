@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Script cargado: DOMContentLoaded'); // Depuración: Script cargado
     // Verifica autenticación
     const token = localStorage.getItem('token');
     if (!token) {
@@ -180,15 +181,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Elementos del DOM
     const modal = document.getElementById('taskModal');
     const addTaskBtn = document.getElementById('addTaskBtn');
-    const closeBtn = document.querySelector('.close');
+    const closeBtn = document.querySelector('#taskModal .btn-close');
     const chatForm = document.getElementById('chatForm');
     const chatInput = document.getElementById('chatInput');
     const chatMessages = document.getElementById('chatMessages');
 
+    console.log('Modal element:', modal); // Depuración: Verificar si modal se obtiene
+    console.log('Add Task Button element:', addTaskBtn); // Depuración: Verificar si addTaskBtn se obtiene
+
     // Verificar que todos los elementos existen
     if (!modal || !addTaskBtn || !closeBtn || !chatForm || !chatInput || !chatMessages) {
-        console.error('Error: No se encontraron todos los elementos del DOM necesarios');
+        console.error('Error: No se encontraron todos los elementos del DOM necesarios para el asistente de tareas.');
         return;
+    }
+
+    // Inicializar el modal de Bootstrap una sola vez
+    let taskModalBootstrap;
+    try {
+        taskModalBootstrap = new bootstrap.Modal(modal);
+        console.log('Bootstrap Modal initialized successfully.');
+    } catch (e) {
+        console.error('Error initializing Bootstrap Modal:', e);
+        // Fallback o alerta si Bootstrap no está disponible
+        alert('Error: La librería de Bootstrap JS no está cargada correctamente. El asistente de tareas no funcionará.');
+        return; // Detener la ejecución si el modal no se puede inicializar
     }
 
     // Función para agregar mensaje al chat
@@ -224,22 +240,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Abrir modal
     addTaskBtn.onclick = function() {
-        modal.style.display = "block";
-        chatInput.focus();
+        taskModalBootstrap.show(); // Mostrar el modal
+        // Mover el foco del input al evento 'shown.bs.modal'
         if (chatMessages.children.length === 0) {
             mostrarBienvenida();
         }
     }
 
+    // Evento que se dispara cuando el modal ha sido completamente mostrado
+    modal.addEventListener('shown.bs.modal', function () {
+        chatInput.focus();
+        console.log('chatInput focused (after modal shown):', document.activeElement === chatInput); // Depuración: Verificar foco después de mostrarse
+    });
+
     // Cerrar modal
     closeBtn.onclick = function() {
-        modal.style.display = "none";
+        taskModalBootstrap.hide(); // Ocultar el modal
     }
 
     // Cerrar modal al hacer clic fuera
     window.onclick = function(event) {
         if (event.target == modal) {
-            modal.style.display = "none";
+            taskModalBootstrap.hide(); // Ocultar el modal
         }
     }
 
@@ -412,118 +434,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Función para verificar colisiones
     async function checkCollisions() {
         try {
-            const response = await axios.get('/api/tareas/colisiones');
+            const response = await axios.get('/api/eventos/colisiones', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
             const colisiones = response.data;
 
             if (Array.isArray(colisiones)) {
+                // Primero, quitar la clase 'urgent' de todos los eventos para limpiar estados anteriores
+                calendar.getEvents().forEach(event => {
+                    if (event.classNames.includes('urgent')) {
+                        event.setProp('classNames', event.classNames.filter(name => name !== 'urgent'));
+                    }
+                });
+
+                // Luego, aplicar la clase 'urgent' a los eventos que tienen colisión
                 colisiones.forEach(colision => {
                     const event = calendar.getEventById(colision.id);
                     if (event) {
-                        event.setProp('classNames', ['urgent']);
+                        if (!event.classNames.includes('urgent')) { // Evitar añadir duplicados
+                            event.setProp('classNames', [...event.classNames, 'urgent']);
+                        }
                     }
                 });
             }
         } catch (error) {
             console.error('Error al verificar colisiones:', error);
-        }
-    }
-
-    // Función para procesamiento local básico
-    function processTextLocally(text) {
-        try {
-            const lowercaseText = text.toLowerCase();
-            
-            // Extraer nombre de la tarea
-            let nombre = text;
-            let tipo = 'tarea';
-            let duracion = 60;
-            
-            // Determinar tipo
-            if (lowercaseText.includes('examen') || lowercaseText.includes('exámen')) {
-                tipo = 'examen';
-                duracion = 120;
-                // Extraer materia del examen
-                const materiaMatch = text.match(/examen\s+de\s+([a-záéíóúñ\s]+)/i);
-                if (materiaMatch) {
-                    nombre = `Examen de ${materiaMatch[1].trim()}`;
-                }
-            } else if (lowercaseText.includes('proyecto')) {
-                tipo = 'proyecto';
-                duracion = 180;
-                const proyectoMatch = text.match(/proyecto\s+de\s+([a-záéíóúñ\s]+)/i);
-                if (proyectoMatch) {
-                    nombre = `Proyecto de ${proyectoMatch[1].trim()}`;
-                }
-            } else if (lowercaseText.includes('tarea') || lowercaseText.includes('entrega')) {
-                tipo = 'tarea';
-                duracion = 90;
-            }
-            
-            // Extraer fecha
-            const fechaPatterns = [
-                /(?:el\s+)?(\w+)\s+(\d{1,2})\s+de\s+(\w+)/i, // "lunes 17 de junio"
-                /(\d{1,2})\s+de\s+(\w+)/i, // "17 de junio"
-                /(\d{1,2})\/(\d{1,2})\/(\d{4})/i, // "17/06/2024"
-                /(\d{1,2})-(\d{1,2})-(\d{4})/i // "17-06-2024"
-            ];
-            
-            const meses = {
-                'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3,
-                'mayo': 4, 'junio': 5, 'julio': 6, 'agosto': 7,
-                'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
-            };
-            
-            let deadline = null;
-            const today = new Date();
-            
-            for (const pattern of fechaPatterns) {
-                const match = text.match(pattern);
-                if (match) {
-                    if (pattern.source.includes('de')) {
-                        // Formato con mes en texto
-                        const dia = parseInt(match[2] || match[1]);
-                        const mesTexto = (match[3] || match[2]).toLowerCase();
-                        const mes = meses[mesTexto];
-                        
-                        if (mes !== undefined && dia >= 1 && dia <= 31) {
-                            deadline = new Date(today.getFullYear(), mes, dia);
-                            if (deadline < today) {
-                                deadline.setFullYear(deadline.getFullYear() + 1);
-                            }
-                        }
-                    } else {
-                        // Formato numérico
-                        const dia = parseInt(match[1]);
-                        const mes = parseInt(match[2]) - 1;
-                        const año = parseInt(match[3]);
-                        deadline = new Date(año, mes, dia);
-                    }
-                    break;
-                }
-            }
-            
-            // Si no se encontró fecha, usar una fecha por defecto (mañana)
-            if (!deadline) {
-                deadline = new Date();
-                deadline.setDate(deadline.getDate() + 1);
-            }
-            
-            return {
-                nombre: nombre.trim(),
-                tipo: tipo,
-                duracion: duracion,
-                deadline: deadline.toISOString().split('T')[0]
-            };
-            
-        } catch (error) {
-            console.error('Error en procesamiento local:', error);
-            return null;
+            // Opcional: mostrar un mensaje de error al usuario si la verificación falla
         }
     }
 
     // Verificar colisiones cada 5 minutos
     setInterval(checkCollisions, 300000);
-    checkCollisions(); // Verificar al cargar la página
+    checkCollisions();
 
     // Notificación de eventos próximos (3 días antes)
     function notificarEventosProximos() {
