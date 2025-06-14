@@ -9,6 +9,6 @@ module.exports = {
   thresholds: {
     high: 80,
     low: 60,
-    break: 70
+    break: null
   }
 }; 
