@@ -21,10 +21,10 @@ jobs:
         ports:
           - 3306:3306
         options: |-
-          --health-cmd="mysqladmin ping --silent"
+          --health-cmd="mysqladmin ping -uroot -p${MYSQL_ROOT_PASSWORD} --silent"
           --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
+          --health-timeout=20s
+          --health-retries=15
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
