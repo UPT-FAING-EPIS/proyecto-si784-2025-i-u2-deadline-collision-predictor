@@ -18,29 +18,29 @@ test.describe('Task Management Tests', () => {
     await page.click('text=New Task');
     
     // Fill in task form
-    await page.fill('input[name="title"]', 'Test Task');
-    await page.fill('textarea[name="description"]', 'This is a test task');
-    await page.fill('input[name="deadline"]', '2024-12-31');
+    await page.fill('input[name="nombre"]', 'Test Event Name');
+    await page.selectOption('select[name="tipo"]', 'tarea'); // Assuming a select element for 'tipo'
+    await page.fill('input[name="deadline"]', '2024-12-31T10:00'); // Assuming datetime-local input
     
     // Submit form
     await page.click('button[type="submit"]');
     
     // Assert task was created
-    await expect(page.locator('text=Test Task')).toBeVisible();
+    await expect(page.locator('text=Test Event Name')).toBeVisible();
   });
 
   test('should edit an existing task', async ({ page }) => {
-    // Click on edit button for first task
+    // Assuming there's an existing task, click on its edit button
     await page.click('.task-item:first-child .edit-button');
     
-    // Update task title
-    await page.fill('input[name="title"]', 'Updated Task Title');
+    // Update task name
+    await page.fill('input[name="nombre"]', 'Updated Event Name');
     
     // Submit form
     await page.click('button[type="submit"]');
     
     // Assert task was updated
-    await expect(page.locator('text=Updated Task Title')).toBeVisible();
+    await expect(page.locator('text=Updated Event Name')).toBeVisible();
   });
 
   test('should delete a task', async ({ page }) => {

@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         evento.setExtendedProp('completado', this.checked);
                         
                         // Actualizar la apariencia del evento directamente en el DOM
-                        const eventElement = info.el; // info.el ya está disponible en eventClick closure
+                        const eventElement = info.el; 
                         if (this.checked) {
                             eventElement.classList.add('completed');
                         } else {
@@ -145,12 +145,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             eventosUsuario[index].completado = this.checked;
                         }
                         
-                        // No es necesario refetchEvents() para el cambio visual inmediato
-                        // Solo si hubiera cambios más complejos en el evento que requieran recarga total.
                     }
                 } catch (error) {
                     console.error('Error al actualizar estado:', error);
-                    this.checked = !this.checked; // Revertir el cambio si hay error
+                    this.checked = !this.checked; 
                     alert('Error al actualizar el estado del evento. Por favor, revisa la consola para más detalles.');
                 }
             };
@@ -505,4 +503,5 @@ document.addEventListener('DOMContentLoaded', function() {
             addMessage('No tienes colisiones de eventos en tu calendario.');
         }
     }
+
 });

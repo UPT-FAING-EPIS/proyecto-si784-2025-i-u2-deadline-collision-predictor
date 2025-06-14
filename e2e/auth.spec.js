@@ -10,7 +10,7 @@ test.describe('Authentication Tests', () => {
     await page.click('text=Login');
     
     // Fill in login form
-    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="username"]', 'test@example.com');
     await page.fill('input[name="password"]', 'password123');
     
     // Submit form
@@ -25,7 +25,7 @@ test.describe('Authentication Tests', () => {
     await page.click('text=Login');
     
     // Fill in login form with invalid credentials
-    await page.fill('input[name="email"]', 'invalid@example.com');
+    await page.fill('input[name="username"]', 'invalid@example.com');
     await page.fill('input[name="password"]', 'wrongpassword');
     
     // Submit form
