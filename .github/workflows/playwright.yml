@@ -21,10 +21,11 @@ jobs:
         ports:
           - 3306:3306
         options: |-
-          --health-cmd="mysqladmin ping -uroot -p${MYSQL_ROOT_PASSWORD} --silent"
+          --health-cmd="mysqladmin ping -uroot -prootpassword --silent"
           --health-interval=10s
-          --health-timeout=20s
-          --health-retries=15
+          --health-timeout=30s
+          --health-retries=20
+          --start-period=30s
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
@@ -33,22 +34,31 @@ jobs:
     - name: Install dependencies
       run: npm ci
     - name: Wait for MySQL
-      run: sleep 10 # Give MySQL some time to start
+      run: |
+        for i in $(seq 1 30); do
+          mysqladmin ping -h mysql -uroot --silent
+          if [ $? -eq 0 ]; then
+            echo "MySQL is up!"
+            break
+          fi
+          echo "Waiting for MySQL... ($i/30)"
+          sleep 2
+        done
     - name: Initialize database and seed data
       env:
-        DB_HOST: 127.0.0.1
+        DB_HOST: mysql
         DB_USER: testuser
         DB_PASSWORD: testpassword
         DB_NAME: deadline_collision_test
       run: |
         sudo apt-get update && sudo apt-get install -y mysql-client
-        mysql -h 127.0.0.1 -u testuser -ptestpassword deadline_collision_test < db/init.sql
+        mysql -h mysql -u testuser -ptestpassword deadline_collision_test < db/init.sql
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
       run: DEBUG=pw:webserver npx playwright test
       env:
-        DB_HOST: 127.0.0.1
+        DB_HOST: mysql
         DB_USER: testuser
         DB_PASSWORD: testpassword
         DB_NAME: deadline_collision_test
