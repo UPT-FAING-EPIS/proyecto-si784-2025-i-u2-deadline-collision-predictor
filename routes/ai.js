@@ -64,7 +64,7 @@ function extractDate(text) {
         console.log('extractDate: Pattern 4 match (mañana). Date:', date.format('YYYY-MM-DD')); // Nuevo log
     }
     // 5. "este lunes", "este sábado" (con o sin tildes)
-    else if (match = text.match(/este\s+([a-záéíóúñ]+)/i)) {
+    else if (match = text.match(/este\s+(lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)/i)) {
         const days = {
             'lunes': 1, 'martes': 2, 'miercoles': 3, 'miércoles': 3, 'jueves': 4,
             'viernes': 5, 'sabado': 6, 'sábado': 6, 'domingo': 0
@@ -73,13 +73,13 @@ function extractDate(text) {
         if (typeof targetDay !== 'undefined') {
             const currentDay = today.day();
             let daysToAdd = targetDay - currentDay;
-            if (daysToAdd < 0) daysToAdd += 7; 
+            if (daysToAdd < 0) daysToAdd += 7;
             date = today.clone().add(daysToAdd, 'days');
         }
         console.log('extractDate: Pattern 5 match (este dia). Date:', date ? date.format('YYYY-MM-DD') : 'null'); // Nuevo log
     }
     // 6. "el lunes", "el próximo lunes"
-    else if (match = text.match(/(?:el|para el|el día|el próximo|el siguiente)?\s*([a-záéíóúñ]+)/i)) {
+    else if (match = text.match(/(?:el|para el|el día|el próximo|el siguiente)\s+(lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)/i)) {
         const days = {
             'lunes': 1, 'martes': 2, 'miercoles': 3, 'miércoles': 3, 'jueves': 4,
             'viernes': 5, 'sabado': 6, 'sábado': 6, 'domingo': 0
@@ -88,7 +88,7 @@ function extractDate(text) {
         if (typeof targetDay !== 'undefined') {
             const currentDay = today.day();
             let daysToAdd = targetDay - currentDay;
-            if (daysToAdd <= 0) daysToAdd += 7; 
+            if (daysToAdd <= 0) daysToAdd += 7;
             date = today.clone().add(daysToAdd, 'days');
         }
         console.log('extractDate: Pattern 6 match (el dia). Date:', date ? date.format('YYYY-MM-DD') : 'null'); // Nuevo log

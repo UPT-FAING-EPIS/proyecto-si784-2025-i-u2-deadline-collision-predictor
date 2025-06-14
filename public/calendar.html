@@ -9,22 +9,191 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .navbar {
+            background-color: #2c3e50;
+        }
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        /* Estilos para el botón flotante */
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #6366f1; /* Color primario */
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+
+        .floating-btn:hover {
+            background-color: #818cf8; /* Color primario más claro al pasar el mouse */
+        }
+
+        /* Estilos para el modal del chat */
+        .modal-content {
+            border-radius: 15px; /* Bordes redondeados */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Sombra sutil */
+            overflow: hidden; /* Asegura que el contenido respete el border-radius */
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 400px; /* Altura fija para el chat */
+            border: 1px solid #e0e0e0; /* Borde sutil */
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f9f9f9; /* Fondo claro para los mensajes */
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message.user .message-content {
+            background-color: #6366f1; /* Color primario para mensajes de usuario */
+            color: white;
+            border-bottom-right-radius: 5px; /* Esquina más afilada en el lado del usuario */
+        }
+
+        .message.assistant .message-content {
+            background-color: #e0e0e0; /* Color claro para mensajes del asistente */
+            color: #333;
+            border-bottom-left-radius: 5px; /* Esquina más afilada en el lado del asistente */
+        }
+
+        .message-content p {
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .chat-input-container {
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+            background-color: white;
+        }
+
+        .chat-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-form input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 1rem;
+        }
+
+        .chat-form .send-btn {
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-form .send-btn:hover {
+            background-color: #818cf8;
+        }
+
+        .offcanvas-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .event-details strong {
+            color: #555;
+        }
+        .event-details i {
+            margin-right: 8px;
+            color: #6366f1;
+        }
+        .form-check-input:checked {
+            background-color: #2ecc71;
+            border-color: #2ecc71;
+        }
+
+    </style>
 </head>
-<body>
-    <header>
-        <div class="header-content">
-            <h1><i class="fas fa-calendar-check"></i> Deadline Collision Predictor</h1>
-            <p>Organiza tus tareas y evita colisiones de deadlines</p>
-            <div class="user-info">
-                <span id="userName"></span>
-                <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+<body class="calendar-page">
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">Deadline Collision Predictor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="calendar.html">Calendario</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item me-3">
+                        <span class="nav-link text-white" id="userName"><i class="fas fa-user-circle me-2"></i></span>
+                    </li>
+                    <li class="nav-item">
+                        <button id="logoutBtn" class="btn btn-danger btn-sm rounded-pill px-3">
+                            <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
+                        </button>
+                    </li>
+                </ul>
             </div>
         </div>
-    </header>
+    </nav>
 
     <main>
-        <div class="calendar-container">
-            <div id="calendar"></div>
+        <div class="container calendar-section-container">
+            <div class="calendar-container">
+                <div id="calendar"></div>
+            </div>
         </div>
 
         <!-- Panel lateral para detalles del evento -->
@@ -35,89 +204,94 @@
             </div>
             <div class="offcanvas-body">
                 <div class="event-details">
-                    <h4 id="eventTitle" class="mb-3"></h4>
+                    <h4 id="eventTitle" class="mb-3 text-primary"></h4>
                     <div class="mb-3">
-                        <strong><i class="fas fa-tag"></i> Tipo:</strong>
+                        <strong><i class="fas fa-tag text-info"></i> Tipo:</strong>
                         <span id="eventType"></span>
                     </div>
                     <div class="mb-3">
-                        <strong><i class="fas fa-calendar-alt"></i> Fecha:</strong>
+                        <strong><i class="fas fa-calendar-alt text-warning"></i> Fecha:</strong>
                         <span id="eventDate"></span>
                     </div>
                     <div class="mb-3">
-                        <strong><i class="fas fa-clock"></i> Hora:</strong>
+                        <strong><i class="fas fa-clock text-dark"></i> Hora:</strong>
                         <span id="eventTime"></span>
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" id="eventCompleted">
                         <label class="form-check-label" for="eventCompleted">Marcar como completado</label>
                     </div>
-                    <button class="btn btn-danger w-100" id="deleteEventBtn">
-                        <i class="fas fa-trash"></i> Eliminar Evento
+                    <button class="btn btn-danger w-100 mt-3" id="deleteEventBtn">
+                        <i class="fas fa-trash me-2"></i> Eliminar Evento
                     </button>
                 </div>
             </div>
         </div>
 
-        <button id="addTaskBtn" class="floating-btn">
+        <button id="addTaskBtn" class="floating-btn" aria-label="Agregar Tarea">
             <i class="fas fa-plus"></i>
         </button>
     </main>
 
     <!-- Modal para agregar tareas -->
-    <div id="taskModal" class="modal">
-        <div class="modal-content">
-            <span class="close"><i class="fas fa-times"></i></span>
-            <h2><i class="fas fa-robot"></i> Asistente de Tareas</h2>
-            
-            <div class="chat-container">
-                <div class="chat-messages" id="chatMessages">
-                    <div class="message assistant">
-                        <div class="message-content">
-                            <i class="fas fa-robot"></i>
-                            <p>¡Hola! Soy tu asistente para programar tareas. Puedes escribirme de forma natural, por ejemplo: "Tengo un examen de Calidad el jueves 12 de junio" o "Necesito entregar el proyecto de Sistemas el próximo lunes".</p>
+    <div id="taskModal" class="modal fade" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true" data-bs-backdrop="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taskModalLabel"><i class="fas fa-robot me-2"></i> Asistente de Tareas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="message assistant">
+                                <div class="message-content">
+                                    <i class="fas fa-robot"></i>
+                                    <p>¡Hola! Soy tu asistente para programar tareas. Puedes escribirme de forma natural, por ejemplo: "Tengo un examen de Calidad el jueves 12 de junio" o "Necesito entregar el proyecto de Sistemas el próximo lunes".</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-container">
+                            <form id="chatForm" class="chat-form">
+                                <input type="text" id="chatInput" placeholder="Escribe tu tarea aquí..." autocomplete="off">
+                                <button type="submit" class="send-btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
-                </div>
-                
-                <div class="chat-input-container">
-                    <form id="chatForm" class="chat-form">
-                        <input type="text" id="chatInput" placeholder="Escribe tu tarea aquí..." autocomplete="off">
-                        <button type="submit" class="send-btn">
-                            <i class="fas fa-paper-plane"></i>
+
+                    <!-- Formulario oculto que se llenará automáticamente -->
+                    <form id="taskForm" style="display: none;">
+                        <div class="form-group mb-3">
+                            <label for="taskName">
+                                <i class="fas fa-pencil-alt me-2"></i> Nombre de la tarea
+                            </label>
+                            <input type="text" id="taskName" class="form-control" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="taskType">
+                                <i class="fas fa-tag me-2"></i> Tipo
+                            </label>
+                            <select id="taskType" class="form-select" required>
+                                <option value="tarea">Tarea</option>
+                                <option value="examen">Examen</option>
+                                <option value="proyecto">Proyecto</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="taskDeadline">
+                                <i class="fas fa-calendar-alt me-2"></i> Fecha límite
+                            </label>
+                            <input type="datetime-local" id="taskDeadline" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save me-2"></i> Guardar Tarea
                         </button>
                     </form>
                 </div>
             </div>
-
-            <!-- Formulario oculto que se llenará automáticamente -->
-            <form id="taskForm" style="display: none;">
-                <div class="form-group">
-                    <label for="taskName">
-                        <i class="fas fa-pencil-alt"></i> Nombre de la tarea
-                    </label>
-                    <input type="text" id="taskName" required>
-                </div>
-                <div class="form-group">
-                    <label for="taskType">
-                        <i class="fas fa-tag"></i> Tipo
-                    </label>
-                    <select id="taskType" required>
-                        <option value="tarea">Tarea</option>
-                        <option value="examen">Examen</option>
-                        <option value="proyecto">Proyecto</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="taskDeadline">
-                        <i class="fas fa-calendar-alt"></i> Fecha límite
-                    </label>
-                    <input type="datetime-local" id="taskDeadline" required>
-                </div>
-                <button type="submit" class="submit-btn">
-                    <i class="fas fa-save"></i> Guardar Tarea
-                </button>
-            </form>
         </div>
     </div>
 
