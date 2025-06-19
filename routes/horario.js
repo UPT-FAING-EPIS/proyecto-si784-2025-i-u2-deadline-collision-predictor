@@ -134,8 +134,8 @@ function parseHorarioComplejo(textoOCR) {
       };
     }
     // Solo agrega al buffer si la línea tiene horas
-    const horasEnLinea = linea.match(/\d{2}:\d{2}/g);
-    if (horasEnLinea && horasEnLinea.length > 0) {
+    const horasEnLinea = limpiarHoras(linea.match(/\d{2}[:\-]\d{2}/g) || []);
+    if (horasEnLinea.length > 0) {
       bufferHoras.push(...horasEnLinea);
     }
   }
@@ -155,8 +155,7 @@ function asignarHorasHeuristico(horas, codigo) {
 
   switch (codigo.toUpperCase()) {
     case 'EG-781':
-      // Todas las horas a miércoles, aunque falten
-      if (horas.length > 0) horario['miercoles'] = horas.join(' / ');
+      if (horas.length > 0) horario['miercoles'] = horas.slice(0, 2).join(' / ');
       break;
     case 'SI-684':
       // Primeras 2 a lunes, siguientes a miércoles
@@ -216,6 +215,13 @@ function resumenPorCurso(eventos) {
       resumen: diasTexto || 'Sin horario asignado'
     };
   });
+}
+
+function limpiarHoras(horas) {
+  // Corrige errores comunes y filtra horas válidas
+  return horas
+    .map(h => h.replace(/-/g, ':').replace(/^1(\d{2}:\d{2})$/, '$1')) // "21-40"->"21:40", "118:20"->"18:20"
+    .filter(h => /^([01]\d|2[0-3]):[0-5]\d$/.test(h)); // Solo horas válidas
 }
 
 module.exports = router;
