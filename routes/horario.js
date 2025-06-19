@@ -149,57 +149,54 @@ function parseHorarioComplejo(textoOCR) {
 
 // Asigna las horas a los días según la cantidad y la estructura de tu horario original
 function asignarHorasHeuristico(horas, codigo) {
-  // Días en orden
   const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
   const horario = {};
   dias.forEach(dia => horario[dia] = '');
 
-  // Heurística por código de curso (ajusta según tu plantilla)
   switch (codigo.toUpperCase()) {
     case 'EG-781':
-      // 2 horas -> miercoles
-      if (horas.length === 2) horario['miercoles'] = horas.join(' / ');
+      // Todas las horas a miércoles, aunque falten
+      if (horas.length > 0) horario['miercoles'] = horas.join(' / ');
       break;
     case 'SI-684':
-      // 4 horas -> lunes y miercoles
-      if (horas.length === 4) {
+      // Primeras 2 a lunes, siguientes a miércoles
+      if (horas.length > 0) {
         horario['lunes'] = horas.slice(0, 2).join(' / ');
-        horario['miercoles'] = horas.slice(2, 4).join(' / ');
+        horario['miercoles'] = horas.slice(2).join(' / ');
       }
       break;
     case 'SI-685':
-      // 6 horas -> miercoles, jueves, viernes
-      if (horas.length === 6) {
+      // 2 a miércoles, 2 a jueves, 2 a viernes (en orden, aunque falten)
+      if (horas.length > 0) {
         horario['miercoles'] = horas.slice(0, 2).join(' / ');
         horario['jueves'] = horas.slice(2, 4).join(' / ');
         horario['viernes'] = horas.slice(4, 6).join(' / ');
       }
       break;
     case 'SI-783':
-      // 6 horas -> lunes, martes, viernes
-      if (horas.length === 6) {
+      // 2 a lunes, 2 a martes, 2 a viernes
+      if (horas.length > 0) {
         horario['lunes'] = horas.slice(0, 2).join(' / ');
         horario['martes'] = horas.slice(2, 4).join(' / ');
         horario['viernes'] = horas.slice(4, 6).join(' / ');
       }
       break;
     case 'SI-784':
-      // 4 horas -> jueves, sabado
-      if (horas.length === 4) {
+      // 2 a jueves, 2 a sábado
+      if (horas.length > 0) {
         horario['jueves'] = horas.slice(0, 2).join(' / ');
         horario['sabado'] = horas.slice(2, 4).join(' / ');
       }
       break;
     case 'SI-786':
-      // 6 horas -> martes, jueves, viernes
-      if (horas.length === 6) {
+      // 2 a martes, 2 a jueves, 2 a viernes
+      if (horas.length > 0) {
         horario['martes'] = horas.slice(0, 2).join(' / ');
         horario['jueves'] = horas.slice(2, 4).join(' / ');
         horario['viernes'] = horas.slice(4, 6).join(' / ');
       }
       break;
     default:
-      // Asigna en orden si no se puede inferir
       horas.forEach((hora, idx) => {
         if (dias[idx]) horario[dias[idx]] = hora;
       });
