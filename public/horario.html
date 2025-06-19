@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Horario Universitario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background-color: var(--secondary-color);
+        }
+        
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        table {
+            margin-bottom: 0;
+        }
+        
+        thead {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        th {
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+        }
+        
+        .preview-container {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .loading-spinner {
+            display: none;
+            color: var(--primary-color);
+        }
+        
+        .section-title {
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-calendar-alt me-2"></i> Gestor de Horario Universitario
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="calendar.html">
+                            <i class="fas fa-arrow-left me-1"></i> Volver al Calendario
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Sección de carga de horario -->
+        <div class="row mb-4">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-upload me-2"></i> Cargar Horario desde Imagen
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="preview-container">
+                            <i class="fas fa-image fa-3x mb-3" style="color: #ccc;"></i>
+                            <p class="text-muted">Previsualización de la imagen</p>
+                            <img id="imagePreview" class="preview-image" alt="Vista previa del horario">
+                        </div>
+                        
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="horarioImage" class="form-label">
+                                    <i class="fas fa-file-image me-2"></i> Selecciona una imagen de tu horario:
+                                </label>
+                                <input class="form-control" type="file" id="horarioImage" accept="image/*" required>
+                                <div class="form-text">Formatos aceptados: JPG, PNG. Tamaño máximo: 5MB</div>
+                            </div>
+                            
+                            <div id="statusMessage" class="status-message" style="display: none;"></div>
+                            
+                            <button type="submit" class="btn btn-primary w-100" id="processBtn">
+                                <i class="fas fa-cog me-2"></i> Procesar Horario
+                                <i class="fas fa-spinner fa-spin loading-spinner ms-2" id="loadingSpinner"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados del horario procesado -->
+        <div class="row" id="resultsSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-table me-2"></i> Horario Procesado
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="horarioTable">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Curso</th>
+                                        <th>Sección</th>
+                                        <th>Lunes</th>
+                                        <th>Martes</th>
+                                        <th>Miércoles</th>
+                                        <th>Jueves</th>
+                                        <th>Viernes</th>
+                                        <th>Sábado</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-3">
+                            <button class="btn btn-outline-secondary" id="retryBtn">
+                                <i class="fas fa-redo me-2"></i> Volver a intentar
+                            </button>
+                            <button class="btn btn-success" id="saveHorarioBtn">
+                                <i class="fas fa-save me-2"></i> Guardar Horario
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.getElementById('uploadForm');
+            const horarioImage = document.getElementById('horarioImage');
+            const imagePreview = document.getElementById('imagePreview');
+            const statusMessage = document.getElementById('statusMessage');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const resultsSection = document.getElementById('resultsSection');
+            const horarioTable = document.querySelector('#horarioTable tbody');
+            const retryBtn = document.getElementById('retryBtn');
+            const saveHorarioBtn = document.getElementById('saveHorarioBtn');
+            const processBtn = document.getElementById('processBtn');
+
+            // Vista previa de la imagen
+            horarioImage.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        imagePreview.src = event.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Procesar el formulario
+            uploadForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!horarioImage.files.length) {
+                    showStatus('Por favor selecciona una imagen', 'warning');
+                    return;
+                }
+
+                const file = horarioImage.files[0];
+                if (file.size > 5 * 1024 * 1024) {
+                    showStatus('El archivo es demasiado grande (máx. 5MB)', 'danger');
+                    return;
+                }
+
+                // Mostrar carga
+                processBtn.disabled = true;
+                loadingSpinner.style.display = 'inline-block';
+                statusMessage.style.display = 'none';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('imagen', file);
+
+                    const token = localStorage.getItem('token');
+                    const response = await axios.post('/api/horario-universitario-img', formData, {
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+
+                    if (response.data.success) {
+                        displayHorario(response.data.eventos);
+                        showStatus('¡Horario procesado correctamente!', 'success');
+                        resultsSection.style.display = 'block';
+                    } else {
+                        throw new Error(response.data.error || 'Error al procesar la imagen');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus(error.response?.data?.error || error.message || 'Error al procesar el horario', 'danger');
+                } finally {
+                    processBtn.disabled = false;
+                    loadingSpinner.style.display = 'none';
+                }
+            });
+
+            // Mostrar horario en tabla
+            function displayHorario(eventos) {
+                horarioTable.innerHTML = '';
+                
+                eventos.forEach(evento => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${evento.codigo}</td>
+                        <td>${evento.nombre}</td>
+                        <td>${evento.seccion}</td>
+                        <td>${evento.horario.lunes || '-'}</td>
+                        <td>${evento.horario.martes || '-'}</td>
+                        <td>${evento.horario.miercoles || '-'}</td>
+                        <td>${evento.horario.jueves || '-'}</td>
+                        <td>${evento.horario.viernes || '-'}</td>
+                        <td>${evento.horario.sabado || '-'}</td>
+                    `;
+                    horarioTable.appendChild(row);
+                });
+            }
+
+            // Botón para reintentar
+            retryBtn.addEventListener('click', function() {
+                resultsSection.style.display = 'none';
+                uploadForm.reset();
+                imagePreview.style.display = 'none';
+                statusMessage.style.display = 'none';
+            });
+
+            // Guardar horario en el sistema
+            saveHorarioBtn.addEventListener('click', async function() {
+                try {
+                    saveHorarioBtn.disabled = true;
+                    saveHorarioBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Guardando...';
+                    
+                    const token = localStorage.getItem('token');
+                    // Aquí deberías obtener los datos del horario procesado para enviar
+                    const eventos = []; // Reemplazar con los datos reales
+                    
+                    const response = await axios.post('/api/horario-universitario', {
+                        eventos
+                    }, {
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+
+                    if (response.data.success) {
+                        showStatus('¡Horario guardado correctamente!', 'success', true);
+                        setTimeout(() => {
+                            window.location.href = 'calendar.html';
+                        }, 1500);
+                    } else {
+                        throw new Error(response.data.error || 'Error al guardar el horario');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus(error.message || 'Error al guardar el horario', 'danger');
+                } finally {
+                    saveHorarioBtn.disabled = false;
+                    saveHorarioBtn.innerHTML = '<i class="fas fa-save me-2"></i> Guardar Horario';
+                }
+            });
+
+            // Mostrar mensajes de estado
+            function showStatus(message, type, persist = false) {
+                statusMessage.textContent = message;
+                statusMessage.className = `status-message alert alert-${type}`;
+                statusMessage.style.display = 'block';
+                
+                if (!persist) {
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 5000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

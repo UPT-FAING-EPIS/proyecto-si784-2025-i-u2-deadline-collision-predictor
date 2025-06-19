@@ -2,138 +2,164 @@ const sharp = require('sharp');
 const fs = require('fs');
 const express = require('express');
 const router = express.Router();
-const moment = require('moment');
-const pool = require('../db');
-const auth = require('../middleware/auth');
+const { createWorker } = require('tesseract.js');
 const multer = require('multer');
-const axios = require('axios');
-const FormData = require('form-data');
 const upload = multer({ dest: 'uploads/' });
+const pdfParse = require('pdf-parse');
 
-// POST /api/horario-universitario
-router.post('/horario-universitario', auth, async (req, res) => {
+// Días de la semana en varios formatos posibles
+const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes', 'sabado', 'sábado'];
+
+// POST /api/horario-universitario-img (Versión definitiva)
+router.post('/horario-universitario-img', upload.single('imagen'), async (req, res) => {
+  let tempFiles = [];
   try {
-    const { cursos, fechaInicio, fechaFin } = req.body;
-    const userId = req.user.id;
-    const eventos = [];
-
-    cursos.forEach(curso => {
-      curso.dias.forEach(diaSemana => {
-        let fecha = moment(fechaInicio).day(diaSemana);
-        if (fecha.isBefore(moment(fechaInicio))) fecha.add(1, 'week');
-        while (fecha.isSameOrBefore(moment(fechaFin))) {
-          eventos.push({
-            nombre: curso.nombre,
-            fecha: fecha.format('YYYY-MM-DD'),
-            hora: curso.horaInicio,
-            tipo: 'clase',
-            origen: 'horario_universitario',
-            usuario_id: userId
-          });
-          fecha.add(1, 'week');
-        }
-      });
-    });
-
-    for (const evento of eventos) {
-      await pool.query(
-        'INSERT INTO eventos (nombre, fecha, hora, tipo, origen, usuario_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [evento.nombre, evento.fecha, evento.hora, evento.tipo, evento.origen, evento.usuario_id]
-      );
+    const { path, mimetype } = req.file;
+    // Validar tipo de archivo
+    if (!['image/jpeg', 'image/png', 'image/jpg'].includes(mimetype)) {
+      fs.unlinkSync(path);
+      return res.status(400).json({ success: false, error: 'Formato de imagen no soportado. Usa JPG o PNG.' });
     }
 
-    res.json({ message: 'Horario universitario agregado exitosamente.' });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Error al agregar horario universitario.' });
-  }
-});
+    const processedPath = `${path}-processed.png`;
+    tempFiles = [path, processedPath];
 
-// POST /api/horario-universitario-img
-router.post('/horario-universitario-img', auth, upload.single('imagen'), async (req, res) => {
-  try {
-    const { path } = req.file;
-    const userId = req.user.id;
-    const processedPath = path + '-processed.png';
-
-    // Mejora la imagen
-    
+    // 1. Preprocesamiento de imagen optimizado para tablas complejas
     await sharp(path)
-      .resize({ width: 1600 }) // Aumenta resolución horizontal
-      .grayscale()
-      .modulate({ brightness: 1.2, contrast: 1.5 }) // Ajuste fino de brillo/contraste
+      .resize({ 
+        width: 2800,  // Resolución óptima para tablas
+        fit: 'contain',
+        background: { r: 255, g: 255, b: 255, alpha: 1 } 
+      })
+      .greyscale()
+      .modulate({ brightness: 1.2, contrast: 1.4 })
+      .threshold(160)  // Umbral óptimo para mantener líneas de tabla
       .sharpen()
-      .normalize() // Normaliza la imagen para mejorar el contraste
-      .threshold(200) // Binariza (ajusta si la imagen queda muy negra o muy blanca)
-      .toFormat('png') 
       .toFile(processedPath);
 
+    // 2. Configuración avanzada de Tesseract para tablas irregulares
+    // 2. Configuración avanzada de Tesseract para tablas irregulares
+      const worker = await createWorker('spa');
+      await worker.setParameters({
+        tessedit_pageseg_mode: '6',
+        tessedit_char_blacklist: '¡¿[]|<>\\/',
+        preserve_interword_spaces: '1',
+        tessedit_ocr_engine_mode: '3',  // LSTM + OCR
+        user_defined_dpi: '300'  // Para mejor calidad de imagen
+      });
 
-    // Enviar imagen a OCR.space
-    const form = new FormData();
-    form.append('file', fs.createReadStream(processedPath));
-    form.append('language', 'spa');
-    form.append('apikey', 'helloworld'); // Clave demo pública
-    form.append('isOverlayRequired', 'false');
 
-    const response = await axios.post('https://api.ocr.space/parse/image', form, {
-      headers: form.getHeaders()
+    const { data: { text } } = await worker.recognize(processedPath);
+    await worker.terminate();
+
+    console.log('Texto OCR Mejorado:', text);
+    
+    // 3. Procesamiento inteligente del texto con manejo de casos complejos
+    const eventos = parseHorarioComplejo(text);
+    
+    // 4. Limpieza de archivos temporales
+    tempFiles.forEach(file => {
+      try { fs.unlinkSync(file); } catch (e) { console.warn('Error al borrar', file, e); }
     });
 
-    const texto = response.data.ParsedResults[0]?.ParsedText || '';
-    console.log('Texto OCR (OCR.space):', texto);
+    res.json({ 
+      success: true,
+      eventos: eventos.filter(e => Object.keys(e.horario).length > 0) // Filtra cursos sin horario
+    });
 
-    const eventosDetectados = parseHorarioTexto(texto);
-
-    fs.unlinkSync(path);
-    fs.unlinkSync(processedPath);
-
-    res.json({ eventos: eventosDetectados, texto });
   } catch (error) {
-    console.error('Error OCR (OCR.space):', error.message);
-    res.status(500).json({ error: 'Error al procesar la imagen con OCR.space.' });
+    // Limpieza en caso de error
+    tempFiles.forEach(file => {
+      try { fs.unlinkSync(file); } catch (e) { console.warn('Error al borrar', file, e); }
+    });
+
+    console.error('Error en el proceso:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error al procesar el horario',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
-function parseHorarioTexto(texto) {
+// Nueva ruta para PDF
+router.post('/api/horario-universitario-pdf', upload.single('pdf'), async (req, res) => {
+  try {
+    const dataBuffer = fs.readFileSync(req.file.path);
+    const data = await pdfParse(dataBuffer);
+    // Aquí puedes usar una función similar a parseHorarioComplejo para procesar data.text
+    const eventos = parseHorarioComplejo(data.text); // Reutiliza tu lógica de parseo
+    fs.unlinkSync(req.file.path);
+    res.json({ success: true, eventos });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// Función mejorada para parsear tablas complejas
+function parseHorarioComplejo(textoOCR) {
+  const lineas = textoOCR.split('\n').map(l => l.trim()).filter(l => l.length > 3);
   const eventos = [];
-  const lineas = texto.split('\n').map(l => l.trim()).filter(Boolean);
+  const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
   let cursoActual = null;
 
-  const horaRegex = /\d{2}:\d{2}/g;
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i];
+    // Busca líneas que parecen un curso (código al inicio)
+    const codigoMatch = linea.match(/^([A-Z]{2,3}-?\d{3})/i);
+    if (codigoMatch) {
+      // Si hay uno anterior, lo guardamos
+      if (cursoActual) eventos.push(cursoActual);
 
-  lineas.forEach(linea => {
-    // Si la línea contiene un código tipo SL-085, asumimos que es un nuevo curso
-    if (/^[A-Z]{2}-\d{3}/i.test(linea)) {
       cursoActual = {
-        codigo: linea.split(' ')[0],
-        curso: linea.replace(/^[A-Z]{2}-\d{3}\s*/i, ''),
-        horas: []
+        codigo: codigoMatch[1],
+        nombre: linea.replace(codigoMatch[1], '').replace(/\d{1,2}:\d{2}/g, '').replace(/[A-Z]\s*$/, '').trim(),
+        seccion: '',
+        horario: {}
       };
-    } else if (cursoActual && horaRegex.test(linea)) {
-      // Si hay horas y hay curso actual, asociamos
-      const horas = linea.match(horaRegex);
-      for (let i = 0; i < horas.length; i += 2) {
-        const horaInicio = horas[i];
-        const horaFin = horas[i + 1] || null;
-
-        if (horaInicio && horaFin) {
-          eventos.push({
-            codigo: cursoActual.codigo,
-            curso: cursoActual.curso,
-            dia: 'Sin definir', // Aquí podrías intentar deducir por posición si el OCR es más limpio
-            horaInicio,
-            horaFin
-          });
-        }
-      }
+      dias.forEach(dia => cursoActual.horario[dia] = '');
+      // Busca horas en la misma línea
+      const horas = [...linea.matchAll(/\d{1,2}:\d{2}/g)].map(m => m[0]);
+      horas.forEach((hora, idx) => {
+        if (dias[idx]) cursoActual.horario[dias[idx]] = hora;
+      });
     } else if (cursoActual) {
-      // A veces el nombre del curso continúa en la línea siguiente
-      cursoActual.curso += ' ' + linea;
+      // Si la línea tiene horas, las agregamos en orden
+      const horas = [...linea.matchAll(/\d{1,2}:\d{2}/g)].map(m => m[0]);
+      let diaIdx = Object.values(cursoActual.horario).filter(h => h).length;
+      horas.forEach((hora, idx) => {
+        if (dias[diaIdx]) cursoActual.horario[dias[diaIdx]] = hora;
+        diaIdx++;
+      });
+      // Si la línea no tiene horas, puede ser parte del nombre
+      if (horas.length === 0 && linea.length > 3) {
+        cursoActual.nombre += ' ' + linea.trim();
+      }
     }
-  });
-
+  }
+  if (cursoActual) eventos.push(cursoActual);
   return eventos;
+}
+
+// Normaliza nombres de días
+function normalizarDia(dia) {
+  const mapaDias = {
+    'miercoles': 'miercoles',
+    'miércoles': 'miercoles',
+    'mercedes': 'miercoles',
+    'sabado': 'sabado',
+    'sábado': 'sabado'
+  };
+  return mapaDias[dia.toLowerCase()] || dia.toLowerCase();
+}
+
+// Limpieza de texto para comparación
+function cleanString(str) {
+  return str.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f¡¿|\[\]<>]/g, "")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 module.exports = router;

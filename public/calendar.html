@@ -174,6 +174,9 @@
                     <li class="nav-item">
                         <a class="nav-link active" href="calendar.html">Calendario</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="horario.html">Horario</a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item me-3">
@@ -232,19 +235,7 @@
             <i class="fas fa-plus"></i>
         </button>
 
-        <!-- Botón para mostrar el formulario de imagen -->
-        <button id="showHorarioImgFormBtn" class="btn btn-secondary w-100 mt-3" type="button">
-            <i class="fas fa-calendar-plus me-2"></i> Agregar horario universitario (imagen)
-        </button>
-
-        <!-- Formulario oculto para subir imagen -->
-        <form id="horarioImgForm" enctype="multipart/form-data" style="display:none; margin-top:15px;">
-          <label>Sube una imagen de tu horario universitario:</label><br>
-          <input type="file" id="horarioImg" accept="image/*" required>
-          <button type="submit" class="btn btn-primary mt-2">Procesar imagen</button>
-          <div id="respuestaHorarioImg" class="mt-2"></div>
-        </form>
-    </main>
+        
 
     <!-- Modal para agregar tareas -->
     <div id="taskModal" class="modal fade" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true" data-bs-backdrop="false">

@@ -27,6 +27,7 @@
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
     "natural": "^6.2.0",
+    "pdf-parse": "^1.1.1",
     "sharp": "^0.34.2",
     "tesseract.js": "^6.0.1"
   },
