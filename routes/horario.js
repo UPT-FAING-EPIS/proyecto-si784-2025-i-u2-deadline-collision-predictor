@@ -6,17 +6,18 @@ const { createWorker } = require('tesseract.js');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 const pdfParse = require('pdf-parse');
+const fetch = require('node-fetch'); // npm install node-fetch
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Días de la semana en varios formatos posibles
 const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes', 'sabado', 'sábado'];
 
-// POST /api/horario-universitario-img (Versión definitiva)
+// POST /api/horario-universitario-img (Solo usa Ollama)
 router.post('/horario-universitario-img', upload.single('imagen'), async (req, res) => {
   let tempFiles = [];
   try {
     const { path, mimetype } = req.file;
 
-    // Validar tipo de archivo
     if (!['image/jpeg', 'image/png', 'image/jpg'].includes(mimetype)) {
       fs.unlinkSync(path);
       return res.status(400).json({ success: false, error: 'Formato de imagen no soportado. Usa JPG o PNG.' });
@@ -25,20 +26,14 @@ router.post('/horario-universitario-img', upload.single('imagen'), async (req, r
     const processedPath = `${path}-processed.png`;
     tempFiles = [path, processedPath];
 
-    // 1. Preprocesamiento de imagen
     await sharp(path)
-      .resize({
-        width: 2800,
-        fit: 'contain',
-        background: { r: 255, g: 255, b: 255, alpha: 1 }
-      })
+      .resize({ width: 2800, fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
       .greyscale()
       .modulate({ brightness: 1.2, contrast: 1.4 })
       .threshold(160)
       .sharpen()
       .toFile(processedPath);
 
-    // 2. Crear worker con oem (modo OCR) desde el inicio
     const worker = await createWorker('spa');
     worker.logger = m => console.log(m);
 
@@ -54,27 +49,26 @@ router.post('/horario-universitario-img', upload.single('imagen'), async (req, r
 
     console.log('Texto OCR Mejorado:', text);
 
-    const eventos = parseHorarioComplejo(text);
+    // 1. Intenta con el parser complejo
+    let eventos = parseHorarioComplejo(text).filter(e => Object.keys(e.horario).length > 0);
 
-    const resumen = resumenPorCurso(eventos);
-    console.log('Resumen de horarios por curso:');
-    resumen.forEach(r => {
-      console.log(`${r.codigo} - ${r.nombre} (${r.seccion}): ${r.resumen}`);
-    });
+    // 2. Si no hay eventos, intenta con el parser universal
+    if (eventos.length === 0) {
+      eventos = parseHorarioUniversal(text);
+    }
 
     // Limpieza de archivos temporales
     tempFiles.forEach(file => {
-      try { fs.unlinkSync(file); } catch (e) { console.warn('Error al borrar', file, e); }
+      try { if (fs.existsSync(file)) fs.unlinkSync(file); } catch (e) { console.warn('Error al borrar', file, e); }
     });
 
-    res.json({
-      success: true,
-      eventos: eventos.filter(e => Object.keys(e.horario).length > 0)
-    });
+    // SOLO USA OLLAMA
+    const eventosOllama = await extraerHorarioOllama(text);
+    res.json({ eventos: eventosOllama, texto });
 
   } catch (error) {
     tempFiles.forEach(file => {
-      try { fs.unlinkSync(file); } catch (e) { console.warn('Error al borrar', file, e); }
+      try { if (fs.existsSync(file)) fs.unlinkSync(file); } catch (e) { console.warn('Error al borrar', file, e); }
     });
 
     console.error('Error en el proceso:', error);
@@ -222,6 +216,120 @@ function limpiarHoras(horas) {
   return horas
     .map(h => h.replace(/-/g, ':').replace(/^1(\d{2}:\d{2})$/, '$1')) // "21-40"->"21:40", "118:20"->"18:20"
     .filter(h => /^([01]\d|2[0-3]):[0-5]\d$/.test(h)); // Solo horas válidas
+}
+
+function parseHorarioUniversal(textoOCR) {
+  const lineas = textoOCR.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  let encabezados = [];
+  let eventos = [];
+
+  // 1. Buscar encabezados
+  for (let i = 0; i < lineas.length; i++) {
+    if (lineas[i].toLowerCase().includes('lunes') && lineas[i].toLowerCase().includes('curso')) {
+      encabezados = lineas[i].split(/\s{2,}|[|]/).map(e => e.trim().toLowerCase());
+      // El resto de líneas son datos
+      for (let j = i + 1; j < lineas.length; j++) {
+        const columnas = lineas[j].split(/\s{2,}|[|]/).map(c => c.trim());
+        if (columnas.length < encabezados.length) continue; // línea incompleta
+        let eventoBase = {
+          codigo: columnas[encabezados.indexOf('codigo')],
+          curso: columnas[encabezados.indexOf('curso')],
+          seccion: columnas[encabezados.indexOf('seccion')]
+        };
+        // Para cada día
+        ['lunes','martes','miercoles','miércoles','jueves','viernes','sabado','sábado','domingo'].forEach(dia => {
+          const idx = encabezados.indexOf(dia);
+          if (idx !== -1 && columnas[idx]) {
+            // Buscar todas las horas en la celda
+            const horas = columnas[idx].match(/\d{2}[:\-]\d{2}/g);
+            if (horas) {
+              for (let k = 0; k < horas.length; k += 2) {
+                eventos.push({
+                  ...eventoBase,
+                  dia,
+                  horaInicio: horas[k].replace('-', ':'),
+                  horaFin: horas[k+1] ? horas[k+1].replace('-', ':') : null
+                });
+              }
+            }
+          }
+        });
+      }
+      break;
+    }
+  }
+  return eventos;
+}
+
+// SOLO ESTA FUNCIÓN IA: LLAMA A OLLAMA
+async function extraerHorarioOllama(textoOCR) {
+  const prompt = `
+Extrae del siguiente texto los cursos, días y horas en formato JSON.
+Ejemplo de salida:
+[
+  {
+    "codigo": "SI-784",
+    "curso": "CALIDAD Y PRUEBAS DE SOFTWARE",
+    "seccion": "A",
+    "horarios": [
+      {"dia": "jueves", "horaInicio": "20:00", "horaFin": "21:40"},
+      {"dia": "sabado", "horaInicio": "08:00", "horaFin": "09:40"}
+    ]
+  }
+]
+Texto:
+${textoOCR}
+  `;
+
+  const response = await fetch('http://localhost:11434/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama3', // Cambia por el modelo que usas si es otro
+      prompt: prompt,
+      stream: false
+    })
+  });
+
+  const data = await response.json();
+  const respuesta = data.response;
+  const jsonMatch = respuesta.match(/\[.*\]/s);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
+  }
+  return [];
+}
+
+// SOLO ESTA FUNCIÓN IA: LLAMA A GEMINI
+async function extraerHorarioGemini(textoOCR) {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+  const prompt = `
+Extrae del siguiente texto los cursos, días y horas en formato JSON.
+Ejemplo de salida:
+[
+  {
+    "codigo": "SI-784",
+    "curso": "CALIDAD Y PRUEBAS DE SOFTWARE",
+    "seccion": "A",
+    "horarios": [
+      {"dia": "jueves", "horaInicio": "20:00", "horaFin": "21:40"},
+      {"dia": "sabado", "horaInicio": "08:00", "horaFin": "09:40"}
+    ]
+  }
+]
+Texto:
+${textoOCR}
+  `;
+
+  const result = await model.generateContent(prompt);
+  const respuesta = result.response.text();
+  const jsonMatch = respuesta.match(/\[.*\]/s);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
+  }
+  return [];
 }
 
 module.exports = router;

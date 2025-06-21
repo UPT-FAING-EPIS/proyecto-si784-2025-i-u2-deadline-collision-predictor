@@ -203,6 +203,54 @@
                 </div>
             </div>
         </div>
+
+        <!-- Nueva sección para subir horario universitario -->
+        <div class="row mb-4">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-upload me-2"></i> Subir Horario Universitario
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="horarioImgForm" enctype="multipart/form-data">
+                            <!-- Campo para subir la imagen del horario -->
+                            <div class="mb-3">
+                                <label for="horarioImg" class="form-label">
+                                    <i class="fas fa-file-image me-2"></i> Imagen de tu horario (JPG o PNG):
+                                </label>
+                                <input class="form-control" type="file" id="horarioImg" accept="image/*" required>
+                                <div class="form-text">Formatos aceptados: JPG, PNG. Tamaño máximo: 5MB</div>
+                            </div>
+
+                            <!-- Campo para seleccionar la fecha de inicio del horario -->
+                            <div class="mb-3">
+                                <label for="fechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-alt me-2"></i> Fecha de inicio:
+                                </label>
+                                <input class="form-control" type="date" id="fechaInicio" required>
+                            </div>
+
+                            <!-- Campo para seleccionar la fecha de fin del horario -->
+                            <div class="mb-3">
+                                <label for="fechaFin" class="form-label">
+                                    <i class="fas fa-calendar-alt me-2"></i> Fecha de fin:
+                                </label>
+                                <input class="form-control" type="date" id="fechaFin" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100" id="uploadHorarioBtn">
+                                <i class="fas fa-upload me-2"></i> Subir Horario
+                                <i class="fas fa-spinner fa-spin loading-spinner ms-2" id="uploadLoadingSpinner"></i>
+                            </button>
+                        </form>
+
+                        <div id="respuestaHorarioImg" style="margin-top:20px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -342,6 +390,58 @@
                 } finally {
                     saveHorarioBtn.disabled = false;
                     saveHorarioBtn.innerHTML = '<i class="fas fa-save me-2"></i> Guardar Horario';
+                }
+            });
+
+            // Nueva sección para subir horario universitario
+            const horarioImgForm = document.getElementById('horarioImgForm');
+            const horarioImg = document.getElementById('horarioImg');
+            const respuestaHorarioImg = document.getElementById('respuestaHorarioImg');
+            const uploadHorarioBtn = document.getElementById('uploadHorarioBtn');
+            const uploadLoadingSpinner = document.getElementById('uploadLoadingSpinner');
+
+            horarioImgForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const fileInput = document.getElementById('horarioImg');
+                const fechaInicio = document.getElementById('fechaInicio').value;
+                const fechaFin = document.getElementById('fechaFin').value;
+                const formData = new FormData();
+                formData.append('imagen', fileInput.files[0]);
+                formData.append('fechaInicio', fechaInicio);
+                formData.append('fechaFin', fechaFin);
+
+                const token = localStorage.getItem('token'); // Ajusta si guardas el token de otra forma
+
+                // Mostrar carga
+                uploadHorarioBtn.disabled = true;
+                uploadLoadingSpinner.style.display = 'inline-block';
+
+                try {
+                    const res = await fetch('/api/horario-universitario-img', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    if (data.eventos && data.eventos.length > 0) {
+                        let html = '<h4>Eventos detectados:</h4><ul>';
+                        data.eventos.forEach(ev => {
+                            html += `<li><b>${ev.curso}</b> (${ev.codigo}) - Sección: ${ev.seccion || ''} - Horarios: ${ev.horarios ? ev.horarios.map(h => `${h.dia}: ${h.horaInicio} a ${h.horaFin}`).join(', ') : ''}</li>`;
+                        });
+                        html += '</ul><p>Revisa los eventos antes de guardar.</p>';
+                        respuestaHorarioImg.innerHTML = html;
+                    } else {
+                        respuestaHorarioImg.innerText = data.texto || data.message || data.error;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    respuestaHorarioImg.innerText = 'Error al procesar la imagen';
+                } finally {
+                    uploadHorarioBtn.disabled = false;
+                    uploadLoadingSpinner.style.display = 'none';
                 }
             });
 
