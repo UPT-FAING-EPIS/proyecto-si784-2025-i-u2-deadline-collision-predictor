@@ -63,8 +63,8 @@ router.post('/horario-universitario-img', upload.single('imagen'), async (req, r
     });
 
     // SOLO USA OLLAMA
-    const eventosOllama = await extraerHorarioOllama(text);
-    res.json({ eventos: eventosOllama, texto });
+    //const eventosOllama = await extraerHorarioOllama(text);
+   // res.json({ eventos: eventosOllama, texto });
 
   } catch (error) {
     tempFiles.forEach(file => {
