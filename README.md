@@ -5,7 +5,7 @@
 
 # Deadline Collision Predictor
 
-Aplicación web para que estudiantes de ingeniería gestionen sus tareas y eviten colisiones de deadlines. Utiliza IA heurística para distribuir tareas y agendar automáticamente.
+Aplicación web para que estudiantes de ingeniería gestionen sus tareas y eviten colisiones de deadlines. Utiliza IA heurística para distribuir tareas y agendar automáticamente. **¡Ahora con integración completa con Moodle!**
 
 ## Descripción del Proyecto
 
@@ -17,6 +17,7 @@ La aplicación permite:
 - Visualizar los eventos en un calendario interactivo.
 - Detectar y notificar colisiones de fechas entre tareas.
 - Sugerir la mejor distribución de actividades usando IA heurística.
+- **🆕 Integración completa con Moodle** para sincronizar cursos, tareas y calendario.
 - Realizar pruebas automatizadas de calidad (unitarias, integración, interfaz y mutación).
 - Automatizar la infraestructura de despliegue con Terraform y GitHub Actions.
 
@@ -25,6 +26,7 @@ La aplicación permite:
 - Facilitar la gestión de tareas y eventos académicos para estudiantes.
 - Prevenir colisiones de fechas límite mediante notificaciones automáticas.
 - Optimizar la distribución de actividades usando inteligencia artificial heurística.
+- **🆕 Sincronizar automáticamente con plataformas LMS como Moodle**.
 - Garantizar la calidad del software mediante pruebas automatizadas y buenas prácticas de desarrollo.
 - Automatizar el despliegue y la infraestructura del proyecto utilizando Terraform y GitHub Actions.
 
@@ -35,6 +37,11 @@ La aplicación permite:
 - **Detección de colisiones** entre deadlines y notificaciones al usuario.
 - **Asistente inteligente** para sugerir la mejor distribución de tareas.
 - **Panel de control (dashboard)** para visualizar el progreso y próximos eventos.
+- **🆕 Integración con Moodle**:
+  - Sincronización automática de cursos
+  - Importación de tareas y asignaciones
+  - Integración del calendario de Moodle
+  - Detección de colisiones entre tareas de Moodle y eventos locales
 - **Pruebas automatizadas**: unitarias, integración, interfaz y mutación.
 - **Automatización de infraestructura**: despliegue en Azure App Service y gestión con Terraform.
 
@@ -43,6 +50,7 @@ La aplicación permite:
 - **Frontend:** HTML, CSS, JavaScript, FullCalendar.js, Bootstrap.
 - **Backend:** Node.js, Express.js.
 - **Base de datos:** MySQL (en servidor propio).
+- **🆕 Integración:** API REST de Moodle para sincronización de datos.
 - **Infraestructura:** Azure App Service (automatizada con Terraform).
 - **Automatización y CI/CD:** GitHub Actions.
 - **Pruebas:** Jest (unitarias e integración), Playwright/Selenium (interfaz), Stryker (mutación).
@@ -55,6 +63,7 @@ La aplicación permite:
 - MySQL
 - Cuenta en Azure (para despliegue)
 - Terraform (opcional, para infraestructura como código)
+- **🆕 Acceso a plataforma Moodle** (para integración)
 
 ### Instalación local
 
@@ -64,12 +73,48 @@ La aplicación permite:
    cd proyecto-si784-2025-i-u2-deadline-collision-predictor
    ```
 
-2.  Inicia la aplicación:
+2. Instala las dependencias:
+   ```bash
+   npm install
+   ```
+
+3. Configura las variables de entorno:
+   ```bash
+   cp .env.example .env
+   # Edita el archivo .env con tus configuraciones
+   ```
+
+4. Ejecuta las migraciones de la base de datos:
+   ```bash
+   mysql -u tu_usuario -p tu_base_de_datos < db/init.sql
+   mysql -u tu_usuario -p tu_base_de_datos < db/migrations/add_moodle_tables.sql
+   ```
+
+5. Inicia la aplicación:
    ```bash
    npm start
    ```
 
-5. Accede a la aplicación en [http://localhost:3000](http://localhost:3000)
+6. Accede a la aplicación en [http://localhost:3000](http://localhost:3000)
+
+### 🆕 Configuración de Integración con Moodle
+
+1. **Obtén tu token de Moodle**:
+   - Inicia sesión en tu plataforma Moodle
+   - Ve a tu perfil → Preferencias → Servicios web
+   - Genera un token de acceso
+
+2. **Configura la integración**:
+   - Accede a la página "Moodle" en la aplicación
+   - Ingresa la URL de tu Moodle, token y ID de usuario
+   - Guarda la configuración
+
+3. **Sincroniza tus datos**:
+   - Haz clic en "Sincronizar Cursos"
+   - Luego "Sincronizar Tareas"
+   - Finalmente "Sincronizar Calendario"
+
+Para más detalles, consulta la [documentación completa de integración con Moodle](MOODLE_INTEGRATION.md).
 
 ---
 
@@ -104,3 +149,43 @@ El repositorio incluye workflows de GitHub Actions para:
 - Automatizar el despliegue y la infraestructura con Terraform.
 
 ---
+
+## 🆕 Nuevas Funcionalidades
+
+### Integración con Moodle
+- **Sincronización automática** de cursos y tareas
+- **Importación de calendario** de Moodle
+- **Detección de colisiones** entre eventos de Moodle y locales
+- **Interfaz unificada** para gestionar todo desde un solo lugar
+
+### Mejoras en la IA
+- **Procesamiento mejorado** de fechas en español
+- **Detección inteligente** de tipos de tareas
+- **Sugerencias automáticas** para evitar colisiones
+
+### Interfaz de Usuario
+- **Diseño responsivo** mejorado
+- **Navegación intuitiva** entre módulos
+- **Indicadores visuales** para estados de tareas
+
+---
+
+## Contribución
+
+Para contribuir al proyecto:
+
+1. Fork el repositorio
+2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Agrega nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crea un Pull Request
+
+---
+
+## Licencia
+
+Este proyecto está bajo la licencia ISC.
+
+---
+
+**¡Organiza tus tareas académicas de manera inteligente y evita colisiones de deadlines con la integración completa de Moodle!** 🎓✨

@@ -13,12 +13,14 @@ document.addEventListener('DOMContentLoaded', function() {
         authTitle.textContent = "Iniciar sesión";
         authSubmitBtn.textContent = "Entrar";
         isLogin = true;
+        document.getElementById('telefonoGroup').style.display = 'none';
     };
     registerBtn.onclick = function() {
         modal.style.display = "block";
         authTitle.textContent = "Registrarse";
         authSubmitBtn.textContent = "Registrarse";
         isLogin = false;
+        document.getElementById('telefonoGroup').style.display = 'block';
     };
     closeBtn.onclick = function() {
         modal.style.display = "none";
@@ -31,13 +33,14 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
+        const telefono = document.getElementById('telefono').value.trim();
         if (!username || !password) return alert('Completa todos los campos');
         try {
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify(isLogin ? { username, password } : { username, password, telefono })
             });
             const data = await res.json();
             if (res.ok && data.token) {

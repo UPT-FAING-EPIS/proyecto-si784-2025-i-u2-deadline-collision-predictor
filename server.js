@@ -8,6 +8,7 @@ const eventosRoutes = require('./routes/eventos');
 const aiRouter = require('./routes/ai');
 const dashboardRoutes = require('./routes/dashboard');
 const horarioRoutes = require('./routes/horario');
+const moodleRoutes = require('./routes/moodle');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', authRoutes);
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/ai', aiRouter);
+app.use('/api/moodle', moodleRoutes);
 app.use('/api', horarioRoutes);
 app.use('/', dashboardRoutes);
 

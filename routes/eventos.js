@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
+const { enviarWhatsApp } = require('../utils/twilio');
 
 // Obtener eventos del usuario
 router.get('/', auth, async (req, res) => {
@@ -31,6 +32,16 @@ router.post('/', auth, async (req, res) => {
             'INSERT INTO eventos (usuario_id, nombre, tipo, deadline, completado) VALUES (?, ?, ?, ?, false)',
             [req.user.id, nombre, tipo, fecha]
         );
+        // Enviar WhatsApp si el usuario tiene teléfono
+        const [usuarios] = await pool.query('SELECT telefono, username FROM usuarios WHERE id = ?', [req.user.id]);
+        if (usuarios.length && usuarios[0].telefono) {
+            const mensaje = `¡Hola! Se ha registrado una nueva tarea: "${nombre}" (${tipo}) para el ${fecha}.`;
+            try {
+                await enviarWhatsApp(usuarios[0].telefono, mensaje);
+            } catch (err) {
+                console.error('Error enviando WhatsApp:', err.message);
+            }
+        }
         res.json({ 
             mensaje: 'Evento guardado',
             id: result.insertId
