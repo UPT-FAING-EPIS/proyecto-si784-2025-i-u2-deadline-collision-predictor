@@ -9,6 +9,7 @@ const aiRouter = require('./routes/ai');
 const dashboardRoutes = require('./routes/dashboard');
 const horarioRoutes = require('./routes/horario');
 const moodleRoutes = require('./routes/moodle');
+require('./utils/telegramBot');
 
 const app = express();
 

@@ -41,6 +41,23 @@ router.post('/', auth, async (req, res) => {
             } catch (err) {
                 console.error('Error enviando WhatsApp:', err.message);
             }
+            // Verificar colisión: ¿hay más de una actividad ese día?
+            const [tareasMismoDia] = await pool.query(
+                'SELECT nombre, tipo, deadline FROM eventos WHERE usuario_id = ? AND DATE(deadline) = DATE(?) ORDER BY deadline',
+                [req.user.id, fecha]
+            );
+            if (tareasMismoDia.length > 1) {
+                let mensajeColision = `¡Atención ${usuarios[0].username}! Tienes varias actividades el ${fecha.split(' ')[0]}:\n`;
+                for (const tarea of tareasMismoDia) {
+                    mensajeColision += `- ${tarea.nombre} (${tarea.tipo}) a las ${new Date(tarea.deadline).toLocaleTimeString()}\n`;
+                }
+                mensajeColision += '¡Organízate para evitar conflictos!';
+                try {
+                    await enviarWhatsApp(usuarios[0].telefono, mensajeColision);
+                } catch (err) {
+                    console.error('Error enviando WhatsApp de colisión:', err.message);
+                }
+            }
         }
         res.json({ 
             mensaje: 'Evento guardado',
