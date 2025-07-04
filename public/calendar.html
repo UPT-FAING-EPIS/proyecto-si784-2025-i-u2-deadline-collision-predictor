@@ -315,25 +315,28 @@
     <script src="script.js"></script>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('horarioImgForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const fileInput = document.getElementById('horarioImg');
-        const formData = new FormData();
-        formData.append('imagen', fileInput.files[0]);
+    const form = document.getElementById('horarioImgForm');
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('horarioImg');
+            const formData = new FormData();
+            formData.append('imagen', fileInput.files[0]);
 
-        const token = localStorage.getItem('token'); // Ajusta si guardas el token de otra forma
+            const token = localStorage.getItem('token'); // Ajusta si guardas el token de otra forma
 
-        const res = await fetch('/api/horario-universitario-img', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            },
-            body: formData
+            const res = await fetch('/api/horario-universitario-img', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                body: formData
+            });
+
+            const data = await res.json();
+            document.getElementById('respuestaHorarioImg').innerText = data.message || data.error || data.texto || '';
         });
-
-        const data = await res.json();
-        document.getElementById('respuestaHorarioImg').innerText = data.message || data.error || data.texto || '';
-    });
+    }
 
     // Botón Google Calendar
     function parseJwt (token) {
