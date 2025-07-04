@@ -41,33 +41,4 @@ router.post('/login', async (req, res) => {
     res.json({ token });
 });
 
-// Endpoint para iniciar el flujo OAuth2
-router.get('/google/auth', (req, res) => {
-  const scopes = [
-    'https://www.googleapis.com/auth/calendar.events',
-    'https://www.googleapis.com/auth/calendar'
-  ];
-  const url = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: scopes
-  });
-  res.redirect(url);
-});
-
-// Endpoint de callback de Google
-router.get('/google/callback', async (req, res) => {
-  const code = req.query.code;
-  const username = req.query.username; // El frontend debe pasar el username como query param
-  if (!code) return res.status(400).send('No se recibió el código de Google');
-  if (!username) return res.status(400).send('Falta el username para asociar el token');
-  try {
-    const { tokens } = await oauth2Client.getToken(code);
-    // Guardar tokens en la base de datos asociados al usuario
-    await pool.query('UPDATE usuarios SET google_token = ? WHERE username = ?', [JSON.stringify(tokens), username]);
-    res.send('¡Integración con Google Calendar exitosa! Puedes cerrar esta ventana.');
-  } catch (err) {
-    res.status(500).send('Error intercambiando el código: ' + err.message);
-  }
-});
-
 module.exports = router; 

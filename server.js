@@ -9,6 +9,7 @@ const aiRouter = require('./routes/ai');
 const dashboardRoutes = require('./routes/dashboard');
 const horarioRoutes = require('./routes/horario');
 const moodleRoutes = require('./routes/moodle');
+const googleRoutes = require('./routes/google');
 require('./utils/telegramBot');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/ai', aiRouter);
 app.use('/api/moodle', moodleRoutes);
 app.use('/api', horarioRoutes);
 app.use('/', dashboardRoutes);
+app.use('/api/google', googleRoutes);
 
 // Ruta principal
 app.get('/', (req, res) => {
