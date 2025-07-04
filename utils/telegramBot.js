@@ -139,8 +139,11 @@ bot.on('voice', async (msg) => {
     }
     const userId = usuarios[0].id;
     // Llamar a tu backend para extraer nombre, tipo y fecha (usando el mismo endpoint que el asistente web)
+    if (!process.env.BACKEND_URL) {
+      throw new Error('La variable de entorno BACKEND_URL no está definida. Debe configurarse con la URL pública de la app en Heroku.');
+    }
     const aiRes = await axios.post(
-      `${process.env.BACKEND_URL || 'http://localhost:3000'}/api/ai/process`,
+      `${process.env.BACKEND_URL}/api/ai/process`,
       { text: texto },
       { headers: { 'Authorization': `Bearer ${process.env.BOT_TOKEN || ''}` } }
     );
