@@ -220,7 +220,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const textP = document.createElement('p');
-        textP.textContent = text;
+        // Detectar bloques de código markdown y renderizarlos como <pre><code>
+        if (!isUser && /```[\s\S]*?```/.test(text)) {
+            // Reemplazar todos los bloques ```codigo``` por <pre><code>codigo</code></pre>
+            let html = text.replace(/```([\s\S]*?)```/g, function(match, code) {
+                return `<pre><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+            });
+            textP.innerHTML = html;
+        } else {
+            textP.textContent = text;
+        }
         contentDiv.appendChild(textP);
         
         messageDiv.appendChild(contentDiv);
