@@ -142,10 +142,10 @@ main {
 
 .modal-content {
     background-color: var(--card-bg);
-    margin: 10% auto;
+    margin: 5% auto;
     padding: 2rem;
-    width: 90%;
-    max-width: 500px;
+    width: 95%;
+    max-width: 800px;
     border-radius: 1rem;
     position: relative;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
@@ -267,6 +267,9 @@ main {
     border-radius: 0.75rem;
     overflow: hidden;
     margin-bottom: 1.5rem;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .chat-messages {
@@ -501,4 +504,11 @@ main {
 .form-check-input:checked {
     background-color: var(--success-color);
     border-color: var(--success-color);
+}
+
+@media (max-width: 900px) {
+    .modal-content, .chat-container {
+        max-width: 98vw;
+        width: 98vw;
+    }
 }

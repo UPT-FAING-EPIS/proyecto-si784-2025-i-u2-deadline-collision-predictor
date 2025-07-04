@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 headers: { 'Authorization': 'Bearer ' + token }
                             });
                             if (openaiRes.data && openaiRes.data.respuesta) {
-                                addMessage('Solución generada por IA:\n' + openaiRes.data.respuesta);
+                                addMessage(openaiRes.data.respuesta);
                             }
                         } catch (err) {
                             console.error('Error al obtener respuesta de OpenAI:', err);
@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 headers: { 'Authorization': 'Bearer ' + token }
                             });
                             if (openaiRes.data && openaiRes.data.respuesta) {
-                                addMessage('Solución generada por IA:\n' + openaiRes.data.respuesta);
+                                addMessage(openaiRes.data.respuesta);
                             }
                         } catch (err) {
                             console.error('Error al obtener respuesta de OpenAI:', err);
