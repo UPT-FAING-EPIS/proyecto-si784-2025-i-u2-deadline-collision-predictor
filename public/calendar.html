@@ -315,11 +315,6 @@
     <script src="script.js"></script>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('showHorarioImgFormBtn').addEventListener('click', function() {
-        const form = document.getElementById('horarioImgForm');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    });
-
     document.getElementById('horarioImgForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const fileInput = document.getElementById('horarioImg');
