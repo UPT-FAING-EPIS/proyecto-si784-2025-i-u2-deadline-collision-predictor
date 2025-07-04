@@ -9,24 +9,32 @@ document.addEventListener('DOMContentLoaded', function() {
     let isLogin = true;
 
     loginBtn.onclick = function() {
-        modal.style.display = "block";
+        modal.classList.remove('hide');
+        modal.classList.add('show');
         authTitle.textContent = "Iniciar sesión";
         authSubmitBtn.textContent = "Entrar";
         isLogin = true;
         document.getElementById('telefonoGroup').style.display = 'none';
     };
     registerBtn.onclick = function() {
-        modal.style.display = "block";
+        modal.classList.remove('hide');
+        modal.classList.add('show');
         authTitle.textContent = "Registrarse";
         authSubmitBtn.textContent = "Registrarse";
         isLogin = false;
         document.getElementById('telefonoGroup').style.display = 'block';
     };
     closeBtn.onclick = function() {
-        modal.style.display = "none";
+        modal.classList.remove('show');
+        modal.classList.add('hide');
+        setTimeout(() => { modal.style.display = "none"; }, 300);
     };
     window.onclick = function(event) {
-        if (event.target == modal) modal.style.display = "none";
+        if (event.target == modal) {
+            modal.classList.remove('show');
+            modal.classList.add('hide');
+            setTimeout(() => { modal.style.display = "none"; }, 300);
+        }
     };
 
     authForm.onsubmit = async function(e) {

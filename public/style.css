@@ -518,3 +518,41 @@ main {
     display: block;
     white-space: pre-wrap;
 }
+
+/* Animación de fade-in para el modal */
+@keyframes fadeInModal {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#authModal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.3);
+    transition: opacity 0.3s;
+}
+
+#authModal.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    animation: fadeInModal 0.4s;
+}
+
+#authModal .modal-content {
+    margin: auto;
+    animation: fadeInModal 0.4s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+#authModal.hide {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
