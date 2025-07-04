@@ -5,6 +5,7 @@ const pool = require('../db');
 const auth = require('../middleware/auth');
 require('moment/locale/es');
 moment.locale('es');
+const { Configuration, OpenAIApi } = require('openai');
 
 function normalizeDayName(day) {
     return day
@@ -180,6 +181,11 @@ function getTomorrowDate() {
     return moment().add(1, 'days').format('YYYY-MM-DD');
 }
 
+// Configuración de OpenAI
+const openai = new OpenAIApi(new Configuration({
+    apiKey: process.env.OPENAI_API_KEY
+}));
+
 router.post('/process', (req, res) => {
     try {
         const { text } = req.body;
@@ -300,6 +306,27 @@ router.post('/ask', auth, async (req, res) => {
         res.status(500).json({
             error: 'Error al procesar la pregunta'
         });
+    }
+});
+
+router.post('/openai', auth, async (req, res) => {
+    const { nombre } = req.body;
+    if (!nombre) return res.status(400).json({ error: 'Falta el nombre de la tarea' });
+    try {
+        const prompt = `Resuelve la siguiente tarea de manera detallada y paso a paso: ${nombre}`;
+        const completion = await openai.createChatCompletion({
+            model: 'gpt-3.5-turbo',
+            messages: [
+                { role: 'system', content: 'Eres un asistente académico experto en resolver tareas universitarias.' },
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 600
+        });
+        const respuesta = completion.data.choices[0].message.content;
+        res.json({ respuesta });
+    } catch (error) {
+        console.error('Error con OpenAI:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Error al obtener respuesta de OpenAI' });
     }
 });
 

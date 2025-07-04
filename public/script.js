@@ -333,6 +333,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (res.status === 200 || res.status === 201) {
                         calendar.refetchEvents();
                         addMessage('¡Tarea agregada exitosamente! ¿Necesitas agregar otra tarea?');
+                        // Llamar a OpenAI y abrir ventana con la respuesta
+                        try {
+                            const openaiRes = await axios.post('/api/ai/openai', {
+                                nombre: taskData.nombre
+                            }, {
+                                headers: { 'Authorization': 'Bearer ' + token }
+                            });
+                            if (openaiRes.data && openaiRes.data.respuesta) {
+                                const win = window.open('', '_blank');
+                                win.document.write('<html><head><title>Solución generada por IA</title></head><body style="font-family:sans-serif;padding:2em;"><h2>Solución generada por OpenAI</h2><pre style="white-space:pre-wrap;">' + openaiRes.data.respuesta.replace(/</g, '&lt;') + '</pre></body></html>');
+                            }
+                        } catch (err) {
+                            console.error('Error al obtener respuesta de OpenAI:', err);
+                            addMessage('No se pudo obtener la solución automática de OpenAI.');
+                        }
                     }
                 } catch (err) {
                     addMessage('Lo siento, hubo un error al guardar la tarea. Por favor, inténtalo de nuevo.');
@@ -412,6 +427,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (res.status === 200 || res.status === 201) {
                         calendar.refetchEvents();
                         addMessage('¡Tarea agregada exitosamente! ¿Necesitas agregar otra tarea?');
+                        // Llamar a OpenAI y abrir ventana con la respuesta
+                        try {
+                            const openaiRes = await axios.post('/api/ai/openai', {
+                                nombre: taskData.nombre
+                            }, {
+                                headers: { 'Authorization': 'Bearer ' + token }
+                            });
+                            if (openaiRes.data && openaiRes.data.respuesta) {
+                                const win = window.open('', '_blank');
+                                win.document.write('<html><head><title>Solución generada por IA</title></head><body style="font-family:sans-serif;padding:2em;"><h2>Solución generada por OpenAI</h2><pre style="white-space:pre-wrap;">' + openaiRes.data.respuesta.replace(/</g, '&lt;') + '</pre></body></html>');
+                            }
+                        } catch (err) {
+                            console.error('Error al obtener respuesta de OpenAI:', err);
+                            addMessage('No se pudo obtener la solución automática de OpenAI.');
+                        }
                     }
                 } catch (err) {
                     addMessage('Lo siento, hubo un error al guardar la tarea. Por favor, inténtalo de nuevo.');
