@@ -1,0 +1,1 @@
+ALTER TABLE usuarios ADD COLUMN google_token TEXT NULL; 
