@@ -127,16 +127,11 @@ main {
     box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15);
 }
 
-/* Modal */
-.modal {
-    width: 98vw !important;
+/* Modal: solo ajustar ancho, no display ni posicionamiento base */
+.modal-dialog {
     max-width: 98vw !important;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0 !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 98vw !important;
+    margin: 2vh auto;
 }
 
 .modal-content {
@@ -503,7 +498,7 @@ main {
 }
 
 @media (max-width: 900px) {
-    .modal, .modal-content, .chat-container {
+    .modal-dialog, .modal-content, .chat-container {
         width: 100vw !important;
         max-width: 100vw !important;
         padding: 0.5rem !important;
