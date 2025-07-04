@@ -19,9 +19,12 @@ router.get('/auth', (req, res) => {
     'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/calendar'
   ];
+  const username = req.query.username;
+  if (!username) return res.status(400).send('Falta el username para iniciar la vinculación');
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: scopes
+    scope: scopes,
+    state: username
   });
   res.redirect(url);
 });
@@ -29,7 +32,7 @@ router.get('/auth', (req, res) => {
 // Endpoint de callback de Google
 router.get('/callback', async (req, res) => {
   const code = req.query.code;
-  const username = req.query.username; // El frontend debe pasar el username como query param
+  const username = req.query.state;
   if (!code) return res.status(400).send('No se recibió el código de Google');
   if (!username) return res.status(400).send('Falta el username para asociar el token');
   try {
