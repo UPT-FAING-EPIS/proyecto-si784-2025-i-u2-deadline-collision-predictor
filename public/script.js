@@ -341,8 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 headers: { 'Authorization': 'Bearer ' + token }
                             });
                             if (openaiRes.data && openaiRes.data.respuesta) {
-                                const win = window.open('', '_blank');
-                                win.document.write('<html><head><title>Solución generada por IA</title></head><body style="font-family:sans-serif;padding:2em;"><h2>Solución generada por OpenAI</h2><pre style="white-space:pre-wrap;">' + openaiRes.data.respuesta.replace(/</g, '&lt;') + '</pre></body></html>');
+                                addMessage('Solución generada por IA:\n' + openaiRes.data.respuesta);
                             }
                         } catch (err) {
                             console.error('Error al obtener respuesta de OpenAI:', err);
@@ -435,8 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 headers: { 'Authorization': 'Bearer ' + token }
                             });
                             if (openaiRes.data && openaiRes.data.respuesta) {
-                                const win = window.open('', '_blank');
-                                win.document.write('<html><head><title>Solución generada por IA</title></head><body style="font-family:sans-serif;padding:2em;"><h2>Solución generada por OpenAI</h2><pre style="white-space:pre-wrap;">' + openaiRes.data.respuesta.replace(/</g, '&lt;') + '</pre></body></html>');
+                                addMessage('Solución generada por IA:\n' + openaiRes.data.respuesta);
                             }
                         } catch (err) {
                             console.error('Error al obtener respuesta de OpenAI:', err);
