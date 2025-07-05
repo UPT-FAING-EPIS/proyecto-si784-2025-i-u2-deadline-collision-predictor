@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horario Intranet - Deadline Collision Predictor</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <nav>
+    <a href="dashboard.html">&larr; Volver al Dashboard</a>
+  </nav>
+  <main>
+    <h1><i class="fas fa-calendar-alt"></i> Horario Intranet</h1>
+    <div id="horario-container">
+      <p>Cargando horario desde la intranet...</p>
+    </div>
+  </main>
+  <script>
+    fetch('http://161.132.45.140:3000/api/horario')
+      .then(res => res.json())
+      .then(data => {
+        const cont = document.getElementById('horario-container');
+        if (!Array.isArray(data) || data.length === 0) {
+          cont.innerHTML = '<p>No se encontraron datos de horario.</p>';
+          return;
+        }
+        let html = '<table><thead><tr>';
+        // Encabezados dinámicos
+        Object.keys(data[0]).forEach(key => {
+          html += `<th>${key}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        data.forEach(row => {
+          html += '<tr>';
+          Object.values(row).forEach(val => {
+            html += `<td>${val}</td>`;
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        cont.innerHTML = html;
+      })
+      .catch(err => {
+        document.getElementById('horario-container').innerHTML = '<p>Error al cargar el horario.</p>';
+      });
+  </script>
+</body>
+</html> 
