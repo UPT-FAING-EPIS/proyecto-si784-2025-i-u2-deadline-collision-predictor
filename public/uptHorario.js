@@ -10,6 +10,8 @@ document.getElementById("upt-form").addEventListener("submit", async (e) => {
   resultadoDiv.innerHTML = "⏳ Procesando...";
   descargasDiv.classList.add("d-none");
 
+  let horarioExtraido = null;
+
   try {
     const res = await fetch("/api/upt-horario", {
       method: "POST",
@@ -30,6 +32,8 @@ document.getElementById("upt-form").addEventListener("submit", async (e) => {
     if (!res.ok) {
       throw new Error(data.error || "Error al obtener el horario.");
     }
+
+    horarioExtraido = data.data; // Guardar el horario extraído
 
     resultadoDiv.innerHTML = "✅ Horario extraído correctamente.";
     document.getElementById("descarga-json").href = `/api/upt-horario/download/json/${codigo}`;
@@ -62,7 +66,7 @@ document.getElementById("upt-form").addEventListener("submit", async (e) => {
             "Content-Type": "application/json",
             "Authorization": "Bearer " + token
           },
-          body: JSON.stringify({ desde, hasta }),
+          body: JSON.stringify({ desde, hasta, horario: horarioExtraido }),
         });
 
         const text = await res.text();
