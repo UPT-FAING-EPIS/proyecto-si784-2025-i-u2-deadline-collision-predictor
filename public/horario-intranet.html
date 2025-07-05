@@ -33,7 +33,7 @@
       const password = document.getElementById('password').value;
       const cont = document.getElementById('horario-container');
       cont.innerHTML = '<p>Cargando horario desde la intranet...</p>';
-      fetch('http://161.132.45.140:3000/api/horario', {
+      fetch('/api/proxy/horario', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ codigo, password })

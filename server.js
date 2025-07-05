@@ -10,6 +10,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const horarioRoutes = require('./routes/horario');
 const moodleRoutes = require('./routes/moodle');
 const googleRoutes = require('./routes/google');
+const horarioProxy = require('./routes/horarioProxy');
 require('./utils/telegramBot');
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/moodle', moodleRoutes);
 app.use('/api', horarioRoutes);
 app.use('/', dashboardRoutes);
 app.use('/api/google', googleRoutes);
+app.use('/api/proxy', horarioProxy);
 
 // Ruta principal
 app.get('/', (req, res) => {
