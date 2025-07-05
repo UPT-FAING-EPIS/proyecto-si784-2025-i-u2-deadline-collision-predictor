@@ -5,7 +5,7 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 router.post('/horario', async (req, res) => {
   try {
     console.log('Proxy: datos recibidos', req.body);
-    const response = await fetch('http://161.132.45.140:3000/api/horario', {
+    const response = await fetch('http://161.132.45.140:3000', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
