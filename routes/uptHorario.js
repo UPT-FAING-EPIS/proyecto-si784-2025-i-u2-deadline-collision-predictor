@@ -38,19 +38,22 @@ router.post("/", async (req, res) => {
 // POST para subir el horario (requiere autenticación)
 router.post("/subir/:codigo", auth, async (req, res) => {
   const codigo = req.params.codigo;
-  const { desde, hasta } = req.body;
+  const { desde, hasta, horario } = req.body;
 
   if (!desde || !hasta) {
     return res.status(400).json({ error: "Faltan fechas 'desde' y 'hasta'." });
   }
 
-  const jsonPath = path.join(__dirname, `../scripts/horarios_json/${codigo}.json`);
-  if (!fs.existsSync(jsonPath)) {
-    return res.status(404).json({ error: "Archivo JSON no encontrado." });
+  // Usa el horario recibido en el body si existe
+  let clases = horario;
+  if (!clases) {
+    const jsonPath = path.join(__dirname, `../scripts/horarios_json/${codigo}.json`);
+    if (!fs.existsSync(jsonPath)) {
+      return res.status(404).json({ error: "Archivo JSON no encontrado." });
+    }
+    const raw = fs.readFileSync(jsonPath);
+    clases = JSON.parse(raw);
   }
-
-  const raw = fs.readFileSync(jsonPath);
-  const clases = JSON.parse(raw);
 
   const diasSemana = {
     lunes: 1,
