@@ -9,8 +9,8 @@ const eventosRoutes = require('./routes/eventos');
 const aiRouter = require('./routes/ai');
 const dashboardRoutes = require('./routes/dashboard');
 
-// ➕ Nueva ruta para el scraper
-const uptHorarioRouter = require('./routes/uptHorario');  // ⬅️ Agregado
+// ✅ Cambiado de uptHorario a api/horario
+const horarioRouter = require('./routes/uptHorario'); // puede renombrarse si quieres
 
 const app = express();
 
@@ -25,7 +25,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', authRoutes);
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/ai', aiRouter);
-app.use('/api/upt-horario', uptHorarioRouter); // ⬅️ Ruta agregada
+app.use('/api/upt-horario', horarioRouter);
+
 app.use('/', dashboardRoutes);
 
 // Ruta principal

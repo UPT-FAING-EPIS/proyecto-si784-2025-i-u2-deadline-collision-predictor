@@ -1,0 +1,86 @@
+[
+    {
+        "codigo": "SI-085",
+        "curso": "TALLER DE EMPRENDIMIENTO Y LIDERAZGO",
+        "seccion": "A",
+        "lunes": "15:0016:40",
+        "martes": "15:0016:40",
+        "miércoles": "",
+        "jueves": "",
+        "viernes": "",
+        "sábado": "",
+        "domingo": ""
+    },
+    {
+        "codigo": "SI-784",
+        "curso": "CALIDAD Y PRUEBAS DE SOFTWARE",
+        "seccion": "A",
+        "lunes": "",
+        "martes": "",
+        "miércoles": "",
+        "jueves": "20:0021:40",
+        "viernes": "",
+        "sábado": "08:0009:40",
+        "domingo": ""
+    },
+    {
+        "codigo": "SI-981",
+        "curso": "TALLER DE TESIS I",
+        "seccion": "A",
+        "lunes": "",
+        "martes": "",
+        "miércoles": "",
+        "jueves": "",
+        "viernes": "15:5018:20",
+        "sábado": "",
+        "domingo": ""
+    },
+    {
+        "codigo": "SI-982",
+        "curso": "PROGRAMACIÓN WEB II",
+        "seccion": "A",
+        "lunes": "16:4018:20",
+        "martes": "",
+        "miércoles": "16:4020:00",
+        "jueves": "",
+        "viernes": "",
+        "sábado": "",
+        "domingo": ""
+    },
+    {
+        "codigo": "SI-983",
+        "curso": "CONSTRUCCIÓN DE SOFTWARE I",
+        "seccion": "A",
+        "lunes": "",
+        "martes": "",
+        "miércoles": "20:0021:40",
+        "jueves": "",
+        "viernes": "",
+        "sábado": "09:4013:00",
+        "domingo": ""
+    },
+    {
+        "codigo": "SI-984",
+        "curso": "REDES Y COMUNICACIÓN DE DATOS II",
+        "seccion": "A",
+        "lunes": "18:2020:00",
+        "martes": "",
+        "miércoles": "",
+        "jueves": "",
+        "viernes": "20:0021:40",
+        "sábado": "",
+        "domingo": ""
+    },
+    {
+        "codigo": "SI-985",
+        "curso": "GESTIÓN DE LA CONFIGURACIÓN DE SOFTWARE",
+        "seccion": "A",
+        "lunes": "",
+        "martes": "18:2020:00",
+        "miércoles": "",
+        "jueves": "18:2020:00",
+        "viernes": "",
+        "sábado": "",
+        "domingo": ""
+    }
+]

@@ -78,6 +78,25 @@
         <i class="fas fa-file-excel me-1"></i> Descargar Excel
       </a>
     </div>
+    <!-- Subida a Base de Datos -->
+<div id="subida-container" class="mt-4 d-none">
+  <h5>📤 Subir horario a la base de datos</h5>
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label for="desde" class="form-label">Desde</label>
+      <input type="date" id="desde" class="form-control" required>
+    </div>
+    <div class="col-md-6 mb-3">
+      <label for="hasta" class="form-label">Hasta</label>
+      <input type="date" id="hasta" class="form-control" required>
+    </div>
+  </div>
+  <button id="btn-subir" class="btn btn-success">
+    <i class="fas fa-upload me-1"></i> Subir horario
+  </button>
+  <div id="resultado-subida" class="mt-3"></div>
+</div>
+
   </div>
 
   <!-- Scripts -->

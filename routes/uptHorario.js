@@ -1,38 +1,121 @@
 const express = require("express");
 const router = express.Router();
-const { exec } = require("child_process");
 const path = require("path");
+const axios = require("axios");
 const fs = require("fs");
+const pool = require("../db");
+const auth = require("../middleware/auth");
+const moment = require("moment");
 
-// Ruta POST: Ejecuta el script de Python
-router.post("/", (req, res) => {
+// POST para ejecutar Python y extraer horario
+router.post("/", async (req, res) => {
   const { codigo, password } = req.body;
 
   if (!codigo || !password) {
     return res.status(400).json({ error: "Faltan datos." });
   }
 
-  const scriptPath = path.join(__dirname, "../scripts/scrape_horario.py");
+  try {
+    const response = await axios.post("http://161.132.45.140:3000/", {
+      codigo,
+      password,
+    }, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-  const comando = `python "${scriptPath}" ${codigo} ${password}`;
-  console.log("🛠️ Ejecutando:", comando);
-
-  exec(comando, { timeout: 60000 }, (error, stdout, stderr) => {
-    if (error) {
-      console.error("❌ Error al ejecutar Python:", error.message);
-      return res.status(500).json({ error: "Fallo en la extracción del horario." });
-    }
-
-    const jsonPath = path.join(__dirname, `../scripts/horarios_json/${codigo}.json`);
-    if (!fs.existsSync(jsonPath)) {
-      return res.status(404).json({ error: "No se encontró el archivo JSON generado." });
-    }
-
-    res.json({ mensaje: "Horario extraído correctamente." });
-  });
+    res.json({
+      mensaje: "Horario extraído correctamente desde el servidor.",
+      data: response.data,
+    });
+  } catch (error) {
+    console.error("❌ Error contactando al servidor Debian:", error.message);
+    res.status(500).json({ error: "No se pudo extraer el horario desde el servidor remoto." });
+  }
 });
 
-// Ruta para descargar JSON
+// POST para subir el horario (requiere autenticación)
+router.post("/subir/:codigo", auth, async (req, res) => {
+  const codigo = req.params.codigo;
+  const { desde, hasta } = req.body;
+
+  if (!desde || !hasta) {
+    return res.status(400).json({ error: "Faltan fechas 'desde' y 'hasta'." });
+  }
+
+  const jsonPath = path.join(__dirname, `../scripts/horarios_json/${codigo}.json`);
+  if (!fs.existsSync(jsonPath)) {
+    return res.status(404).json({ error: "Archivo JSON no encontrado." });
+  }
+
+  const raw = fs.readFileSync(jsonPath);
+  const clases = JSON.parse(raw);
+
+  const diasSemana = {
+    lunes: 1,
+    martes: 2,
+    miercoles: 3,
+    miércoles: 3,
+    jueves: 4,
+    viernes: 5,
+    sabado: 6,
+    sábado: 6,
+    domingo: 0,
+  };
+
+  const eventos = [];
+
+  for (const clase of clases) {
+    for (const [dia, horarioRaw] of Object.entries(clase)) {
+      if (!diasSemana.hasOwnProperty(dia)) continue;
+      if (!horarioRaw) continue;
+
+      let horario = horarioRaw.trim();
+
+      if (!horario.includes("-") && horario.length === 10) {
+        horario = horario.slice(0, 5) + "-" + horario.slice(5);
+      }
+
+      if (!horario.includes("-")) continue;
+
+      const [horaInicio] = horario.split("-").map((h) => h.trim());
+      const dayNum = diasSemana[dia];
+
+      let fechaActual = moment(desde);
+      const fechaFin = moment(hasta);
+
+      while (fechaActual.isSameOrBefore(fechaFin)) {
+        if (fechaActual.day() === dayNum) {
+          const fechaEvento = fechaActual.format("YYYY-MM-DD") + "T" + horaInicio;
+
+          eventos.push([
+            req.user.id,
+            `${clase.curso} (${clase.seccion})`,
+            "clase",
+            fechaEvento,
+          ]);
+        }
+        fechaActual.add(1, "day");
+      }
+    }
+  }
+
+  const insertQuery = `
+    INSERT INTO eventos (usuario_id, nombre, tipo, deadline)
+    VALUES ?
+  `;
+
+  try {
+    await pool.query(insertQuery, [eventos]);
+    res.json({ mensaje: `✅ Se registraron ${eventos.length} clases como eventos.` });
+  } catch (err) {
+    console.error("❌ Error insertando en la base de datos:", err);
+    res.status(500).json({ error: "Error al guardar los eventos en la base de datos." });
+  }
+});
+
+// GET para descargar JSON
 router.get("/download/json/:codigo", (req, res) => {
   const codigo = req.params.codigo;
   const filePath = path.join(__dirname, `../scripts/horarios_json/${codigo}.json`);
@@ -43,7 +126,7 @@ router.get("/download/json/:codigo", (req, res) => {
   }
 });
 
-// Ruta para descargar Excel
+// GET para descargar Excel
 router.get("/download/excel/:codigo", (req, res) => {
   const codigo = req.params.codigo;
   const filePath = path.join(__dirname, `../scripts/horarios_excel/${codigo}.xlsx`);
