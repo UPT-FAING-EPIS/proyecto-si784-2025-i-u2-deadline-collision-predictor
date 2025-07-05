@@ -33,7 +33,8 @@ document.getElementById("upt-form").addEventListener("submit", async (e) => {
       throw new Error(data.error || "Error al obtener el horario.");
     }
 
-    horarioExtraido = data.data; // Guardar el horario extraído
+    // Guardar el horario extraído correctamente desde la API (soporta ambos campos)
+    horarioExtraido = data.horario || data.data;
 
     resultadoDiv.innerHTML = "✅ Horario extraído correctamente.";
     document.getElementById("descarga-json").href = `/api/upt-horario/download/json/${codigo}`;
