@@ -40,6 +40,7 @@
       })
       .then(res => res.json())
       .then(data => {
+        const cont = document.getElementById('horario-container');
         if (data.error) {
           cont.innerHTML = `<p style='color:red;'>${data.error}</p>`;
           return;
@@ -48,15 +49,20 @@
           cont.innerHTML = '<p>No se encontraron datos de horario.</p>';
           return;
         }
+        // Encabezados fijos para la tabla
+        const headers = [
+          'codigo', 'curso', 'seccion',
+          'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'
+        ];
         let html = '<table><thead><tr>';
-        Object.keys(data[0]).forEach(key => {
-          html += `<th>${key}</th>`;
+        headers.forEach(key => {
+          html += `<th>${key.charAt(0).toUpperCase() + key.slice(1)}</th>`;
         });
         html += '</tr></thead><tbody>';
         data.forEach(row => {
           html += '<tr>';
-          Object.values(row).forEach(val => {
-            html += `<td>${val}</td>`;
+          headers.forEach(key => {
+            html += `<td>${row[key] || ''}</td>`;
           });
           html += '</tr>';
         });
