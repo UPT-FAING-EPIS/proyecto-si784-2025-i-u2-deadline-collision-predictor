@@ -55,6 +55,12 @@ router.post("/subir/:codigo", auth, async (req, res) => {
     clases = JSON.parse(raw);
   }
 
+  // Validar que clases es un array
+  console.log("Horario recibido para subir:", clases);
+  if (!Array.isArray(clases) || clases.length === 0) {
+    return res.status(400).json({ error: "El horario recibido no es válido o está vacío." });
+  }
+
   const diasSemana = {
     lunes: 1,
     martes: 2,
@@ -102,6 +108,12 @@ router.post("/subir/:codigo", auth, async (req, res) => {
         fechaActual.add(1, "day");
       }
     }
+  }
+
+  // Validar que hay eventos para insertar
+  console.log("Eventos a insertar:", eventos);
+  if (eventos.length === 0) {
+    return res.status(400).json({ error: "No se generaron eventos para insertar." });
   }
 
   const insertQuery = `
