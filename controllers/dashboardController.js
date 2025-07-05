@@ -1,7 +1,18 @@
 const db = require('../db');
+const appInsights = require('applicationinsights');
 
 const getDashboardStats = async (req, res) => {
     try {
+        // Track dashboard access
+        appInsights.defaultClient.trackEvent({
+            name: 'DashboardAccessed',
+            properties: {
+                userId: req.user.id,
+                username: req.user.username,
+                timestamp: new Date().toISOString()
+            }
+        });
+
         // Obtener estadísticas de tareas completadas vs pendientes
         const [completadas] = await db.query(
             'SELECT COUNT(*) as count FROM eventos WHERE completado = TRUE AND usuario_id = ?',

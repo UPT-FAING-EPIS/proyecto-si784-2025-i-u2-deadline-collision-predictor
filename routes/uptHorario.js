@@ -6,6 +6,7 @@ const fs = require("fs");
 const pool = require("../db");
 const auth = require("../middleware/auth");
 const moment = require("moment");
+const appInsights = require("applicationinsights");
 
 // POST para ejecutar Python y extraer horario
 router.post("/", async (req, res) => {
@@ -25,12 +26,33 @@ router.post("/", async (req, res) => {
       },
     });
 
+    // Track schedule extraction
+    appInsights.defaultClient.trackEvent({
+      name: 'ScheduleExtracted',
+      properties: {
+        codigo: codigo,
+        success: true,
+        timestamp: new Date().toISOString()
+      }
+    });
+
     res.json({
       mensaje: "Horario extraído correctamente desde el servidor.",
       data: response.data,
     });
   } catch (error) {
     console.error("❌ Error contactando al servidor Debian:", error.message);
+    
+    // Track failed extraction
+    appInsights.defaultClient.trackEvent({
+      name: 'ScheduleExtractionFailed',
+      properties: {
+        codigo: codigo,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }
+    });
+
     res.status(500).json({ error: "No se pudo extraer el horario desde el servidor remoto." });
   }
 });
@@ -123,9 +145,36 @@ router.post("/subir/:codigo", auth, async (req, res) => {
 
   try {
     await pool.query(insertQuery, [eventos]);
+    
+    // Track schedule upload
+    appInsights.defaultClient.trackEvent({
+      name: 'ScheduleUploaded',
+      properties: {
+        userId: req.user.id,
+        username: req.user.username,
+        codigo: codigo,
+        eventsCount: eventos.length,
+        dateRange: `${desde} to ${hasta}`,
+        timestamp: new Date().toISOString()
+      }
+    });
+
     res.json({ mensaje: `✅ Se registraron ${eventos.length} clases como eventos.` });
   } catch (err) {
     console.error("❌ Error insertando en la base de datos:", err);
+    
+    // Track upload failure
+    appInsights.defaultClient.trackEvent({
+      name: 'ScheduleUploadFailed',
+      properties: {
+        userId: req.user.id,
+        username: req.user.username,
+        codigo: codigo,
+        error: err.message,
+        timestamp: new Date().toISOString()
+      }
+    });
+
     res.status(500).json({ error: "Error al guardar los eventos en la base de datos." });
   }
 });

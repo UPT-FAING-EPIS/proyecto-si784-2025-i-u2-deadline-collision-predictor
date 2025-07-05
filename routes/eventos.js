@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 const { enviarWhatsApp } = require('../utils/twilio');
+const appInsights = require('applicationinsights');
 
 // Obtener eventos del usuario
 router.get('/', auth, async (req, res) => {
@@ -32,6 +33,20 @@ router.post('/', auth, async (req, res) => {
             'INSERT INTO eventos (usuario_id, nombre, tipo, deadline, completado) VALUES (?, ?, ?, ?, false)',
             [req.user.id, nombre, tipo, fecha]
         );
+
+        // Track event creation
+        appInsights.defaultClient.trackEvent({
+            name: 'EventCreated',
+            properties: {
+                userId: req.user.id,
+                username: req.user.username,
+                eventType: tipo,
+                eventName: nombre,
+                deadline: fecha,
+                timestamp: new Date().toISOString()
+            }
+        });
+
         // Enviar WhatsApp si el usuario tiene teléfono
         const [usuarios] = await pool.query('SELECT telefono, username FROM usuarios WHERE id = ?', [req.user.id]);
         if (usuarios.length && usuarios[0].telefono) {
@@ -79,6 +94,19 @@ router.put('/:id', auth, async (req, res) => {
             'UPDATE eventos SET completado = ? WHERE id = ? AND usuario_id = ?',
             [completado, id, req.user.id]
         );
+
+        // Track event completion status change
+        appInsights.defaultClient.trackEvent({
+            name: 'EventStatusChanged',
+            properties: {
+                userId: req.user.id,
+                username: req.user.username,
+                eventId: id,
+                completed: completado,
+                timestamp: new Date().toISOString()
+            }
+        });
+
         res.json({ mensaje: 'Evento actualizado' });
     } catch (error) {
         console.error('Error al actualizar evento:', error);
@@ -95,6 +123,18 @@ router.delete('/:id', auth, async (req, res) => {
             'DELETE FROM eventos WHERE id = ? AND usuario_id = ?',
             [id, req.user.id]
         );
+
+        // Track event deletion
+        appInsights.defaultClient.trackEvent({
+            name: 'EventDeleted',
+            properties: {
+                userId: req.user.id,
+                username: req.user.username,
+                eventId: id,
+                timestamp: new Date().toISOString()
+            }
+        });
+
         res.json({ mensaje: 'Evento eliminado' });
     } catch (error) {
         console.error('Error al eliminar evento:', error);

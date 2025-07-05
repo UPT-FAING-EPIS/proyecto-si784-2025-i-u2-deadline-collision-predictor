@@ -1,4 +1,16 @@
 require('dotenv').config();
+
+// INICIO Application Insights
+const appInsights = require('applicationinsights');
+appInsights.setup(process.env.APPINSIGHTS_INSTRUMENTATIONKEY)
+    .setAutoCollectRequests(true)
+    .setAutoCollectPerformance(true)
+    .setAutoCollectExceptions(true)
+    .setAutoCollectDependencies(true)
+    .setAutoDependencyCorrelation(true)
+    .start();
+// FIN Application Insights
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
