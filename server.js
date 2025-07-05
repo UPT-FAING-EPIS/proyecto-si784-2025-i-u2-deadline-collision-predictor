@@ -11,6 +11,7 @@ const horarioRoutes = require('./routes/horario');
 const moodleRoutes = require('./routes/moodle');
 const googleRoutes = require('./routes/google');
 const horarioProxy = require('./routes/horarioProxy');
+const horarioRouter = require('./routes/uptHorario');
 require('./utils/telegramBot');
 
 const app = express();
