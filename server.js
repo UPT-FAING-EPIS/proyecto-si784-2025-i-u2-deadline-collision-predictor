@@ -28,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/ai', aiRouter);
 app.use('/api/moodle', moodleRoutes);
+app.use('/api/upt-horario', horarioRouter);
 app.use('/api', horarioRoutes);
 app.use('/', dashboardRoutes);
 app.use('/api/google', googleRoutes);

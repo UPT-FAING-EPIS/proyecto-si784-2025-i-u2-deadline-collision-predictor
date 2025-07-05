@@ -11,7 +11,7 @@ document.getElementById("upt-form").addEventListener("submit", async (e) => {
   descargasDiv.classList.add("d-none");
 
   try {
-    const res = await fetch("http://161.132.45.140:3000/", {
+    const res = await fetch("/api/upt-horario", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ codigo, password }),
